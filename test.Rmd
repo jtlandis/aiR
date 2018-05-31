@@ -1,0 +1,68 @@
+---
+title: "Testing"
+author: "Justin L"
+date: "4/4/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(dplyr)
+library(justinmisc)
+```
+
+```{r}
+#Training data 1
+
+set.seed(1227)
+group1.x <- runif(n = 300)
+group1.y <- runif(n = 300)
+group2.x <- runif(n = 300, min = -1, max = .5)
+group2.y <- runif(n = 300, min = -1, max = .1)
+
+g1 <- cbind(group1.x,group1.y, rep("g1",300))
+colnames(g1) <- c("x","y","group")
+g2 <- cbind(group2.x,group2.y, rep("g2",300))
+colnames(g2) <- c("x","y","group")
+
+train <- as.data.frame(rbind(g1,g2))
+train <- justinmisc::correct.mode(train,c("num","num","Factor"))
+
+ggplot(train, aes(x,y, color = group)) +
+  geom_point()
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+layer1 <- aiRlayer(2,4)
+layer2 <- aiRlayer(4,2)
+```
+
+```{r}
+size <- seq(nrow(train))
+s <- sample(size, 300)
+
+train.dat <- train[s,]
+train.test <- train[!size %in% s,]
+```
+
+```{r}
+#expected answer
+g1 <- c(1,0)
+g2 <- c(0,1)
+```
+
