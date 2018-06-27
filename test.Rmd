@@ -39,7 +39,7 @@ colnames(g2) <- c("x","y","group")
 
 train <- as.data.frame(rbind(g1,g2))
 train <- justinmisc::correct.mode(train,c("num","num","Factor"))
-
+train$z <- runif(300)
 ggplot(train, aes(x,y, color = group)) +
   geom_point()
 
@@ -48,7 +48,7 @@ ggplot(train, aes(x,y, color = group)) +
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 ```{r}
-layer1 <- aiRlayer(2,4)
+layer1 <- aiRlayer(3,4)
 layer2 <- aiRlayer(4,2)
 ```
 
@@ -64,5 +64,9 @@ train.test <- train[!size %in% s,]
 #expected answer
 g1 <- c(1,0)
 g2 <- c(0,1)
+```
+
+```{r}
+aiRrun(data = train,var.classify = "group",layers = list(layer1,layer2))
 ```
 
