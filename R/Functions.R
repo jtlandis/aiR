@@ -73,7 +73,7 @@ aiRsubset <- function(x, train.method, batch.size, train.Factor = NULL) {
       stop("train.Factor must either be length 1 or 2.")
     }
   }
-  sub <- sample.rows %in% seq(1,total.length)
+  sub <- seq(1,total.length) %in% sample.rows
   return(sub)
 }
 is.aiRlayer <- function(x) inherits(x, "aiRlayer")
@@ -88,7 +88,7 @@ is.aiRlayer <- function(x) inherits(x, "aiRlayer")
 #' c("column.index/name","factor.level"). Can assign only column name or index but first level is chosen in this case.
 #' @param na.rm remove NAs, default set to TRUE. Function likely to fail with NAs
 aiRrun <- function(data, var.classify, layers, train.method="Sample", batch.size=.5,train.Factor = NULL, na.rm=TRUE) {
-  browser()
+
   n <- length(layers)             #how many layers
   index <- justinmisc::index.o.coln(vec = var.classify, v.size = 1, v.name = "var.classify", name.col = colnames(data))   #index of classify column
   if(isTRUE(na.rm)) {
@@ -99,6 +99,7 @@ aiRrun <- function(data, var.classify, layers, train.method="Sample", batch.size
   #How much of data is training, what method to train against
   data.save <- data
   sample.rows <- aiRsubset(x = data, train.method = train.method, batch.size = batch.size, train.Factor = train.Factor)
+
   data.train <- data[sample.rows,]
   data.test <-  data[!sample.rows,]
   classify <- data.save[,index]
@@ -111,16 +112,20 @@ aiRrun <- function(data, var.classify, layers, train.method="Sample", batch.size
     data.train <- sigmoid(data.train )
   }
 
-  correct <- ifelse((levels(train$group) %in% classify.train) == T, 1, 0)
-  loss.prop <- (data.train - correct)^2
-  loss <- sum(loss.prop)
+  browser()
+  #classification matrix
+  class.mat <- diag(nrow = ncol(layers[[length(layers)]]$weights),ncol = ncol(layers[[length(layers)]]$weights))
+  correct.train <- class.mat[classify.train,]
+  loss.prop <- (apply((correct.train - data.train),2,neg.exp)) #squared loss, directional (negative used)
+  row.loss <- apply(abs(loss.prop),1,sum)
+  total.loss <- sum(loss.prop)
 
-  stop()
- prop <- (correct - data.train)/data.train
- prop <- prop/(sum(abs(prop)))
- prop.node <- loss*prop
+ #prop <- (correct.train - data.train)/data.train
+  prop <- loss.prop/(matrix(rep(apply(X = abs(loss.prop), MARGIN = 2, sum), each = nrow(loss.prop)),ncol = ncol(loss.prop), nrow = nrow(loss.prop)))
+ #prop <- prop/(matrix(rep(apply(X = abs(prop), MARGIN = 2, sum), each = nrow(prop)),ncol = ncol(prop), nrow = nrow(prop)))
+ prop.node <- loss*loss.prop*prop
  node.size <- nrow(layer2$weights)
- prop.mat <- abs(as.data.frame(layer2$weights)/apply(abs(as.data.frame(layer2$weights)),2,sum))
+ prop.mat <- abs(as.data.frame(layer2$weights)/matrix(rep(apply(abs(as.data.frame(abs(layer2$weights))),2,sum), each = nrow(layer2$weights)),ncol = ncol(layer2$weights), nrow = nrow(layer2$weights)))
  l2 <- (as.data.frame(t(sqrt(node.size)*prop.mat))*(prop))
  layer2$weights <- l2 +(as.data.frame(layer2$weights))
  layer2$bias <- layer2$weights + prop.node
@@ -129,4 +134,11 @@ aiRrun <- function(data, var.classify, layers, train.method="Sample", batch.size
 
   return(loss)
 
+}
+
+neg.exp <- function(x, power = 2) {
+  .t <- x<0
+  x <- x^(power)
+  x[.t] <- -1*x[.t]
+  return(x)
 }
