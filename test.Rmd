@@ -48,7 +48,7 @@ ggplot(train, aes(x,y, color = group)) +
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 ```{r}
-layer1 <- aiRlayer(2,4)
+layer1 <- aiRlayer(3,4)
 layer2 <- aiRlayer(4,2)
 ```
 
@@ -67,6 +67,6 @@ g2 <- c(0,1)
 ```
 
 ```{r}
-aiRrun(data = train[,-4],var.classify = "group",layers = list(layer1,layer2))
+loss.aiR <- aiRrun(data = train,var.classify = "group",layers = list(layer1,layer2), cycles = 100,batch.size = 60)
 ```
 
