@@ -177,14 +177,14 @@ aiRrun <- function(data,
     loss[k+1,"test"] <- test.loss$total.loss
     for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
       row.work <- train.loss$loss.prop[i,]
-      row.work <- sqrt(length(row.work))*row.work*(abs(row.work/(train.loss$row.loss[i])))
+      row.work <- sqrt(length(row.work))*row.work*(abs(row.work/(train.loss$row.loss[i])))*(train.loss$row.loss[i]/train.loss$total.loss)
       for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
         w <- mat.opperation(x = abs(layers[[j]]$weights), y = row.work, opperation = "*")
         layers[[j]]$change.w <- layers[[j]]$change.w + w
         b <- abs(layers[[j]]$bias)*row.work
         layers[[j]]$change.b <- layers[[j]]$change.b + b
         new.loss <- apply(w,1,mean)
-        row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+        row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))*(train.loss$row.loss[i]/train.loss$total.loss)
       }
     }
     last.loss <- layers
@@ -340,4 +340,13 @@ merge.multi <- function(...) {
 ReLU <- function(x) {
   x[x<0] <- 0
   return(x)
+}
+
+aiRrate <- function(data, factor, layers) {
+  index <- index.o.coln(vec = factor, v.size = 1, v.name = "factor", name.col = colnames(data))
+  data.save <- data
+  data <- data[,-index]
+  classify <- aiRclassify(data = data, factor = levels(data.save[,index]), layers = layers)
+  rate <- mean(data.save[,index]==classify$classify)
+  return(rate)
 }

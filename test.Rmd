@@ -59,7 +59,7 @@ train <- rbind(train, data.frame(x = c(.7, .9, .6, -.7,-.9,-.6),
                         group = c("g2","g2","g2","g1","g1","g1"),
                         z = c(.1,.2,.4,.5,.7,-.8)))
 train <- train[,-4]
-loss.aiR <- aiRrun(data = train,var.classify = "group",layers = list(layer1,layer2), sample.size = .7,cycles = 300,batch.size = 60)
+loss.aiR <- aiRrun(data = train,var.classify = "group",layers = list(layer1,layer2), sample.size = .5,cycles = 300,batch.size = 60)
 ```
 ```{r}
 loss.aiR$loss$iteration <- as.numeric(rownames(loss.aiR$loss))
@@ -105,5 +105,9 @@ classify_obj <- aiRclassify(data = new$data_model, factor = levels(train$group),
 ```{r}
 ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
   geom_point(aes(color = as.factor(classify_obj$classify), alpha = classify_obj$node.max)) 
+```
+
+```{r}
+aiRrate(data = train, factor = "group", layers = loss.aiR$layers)
 ```
 
