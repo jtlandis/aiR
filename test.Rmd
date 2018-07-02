@@ -26,7 +26,7 @@ library(justinmisc)
 ```{r}
 #Training data 1
 
-set.seed(1227)
+set.seed(6227)
 group1.x <- runif(n = 300)
 group1.y <- runif(n = 300)
 group2.x <- runif(n = 300, min = -1, max = .5)
@@ -48,32 +48,62 @@ ggplot(train, aes(x,y, color = group)) +
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 ```{r}
-layer1 <- aiRlayer(3,4)
+layer1 <- aiRlayer(2,4)
 layer2 <- aiRlayer(4,2)
 ```
 
-```{r}
-size <- seq(nrow(train))
-s <- sample(size, 300)
 
-train.dat <- train[s,]
-train.test <- train[!size %in% s,]
+```{r}
+train <- rbind(train, data.frame(x = c(.7, .9, .6, -.7,-.9,-.6),
+                        y = c(-.7,-.6,-.9, .5, .3, .8),
+                        group = c("g2","g2","g2","g1","g1","g1"),
+                        z = c(.1,.2,.4,.5,.7,-.8)))
+train <- train[,-4]
+loss.aiR <- aiRrun(data = train,var.classify = "group",layers = list(layer1,layer2), sample.size = .7,cycles = 300,batch.size = 60)
+```
+```{r}
+loss.aiR$loss$iteration <- as.numeric(rownames(loss.aiR$loss))
+ggplot(data = loss.aiR$loss,aes(x = iteration)) +
+  geom_point(aes(y = train,color = "train")) +
+  geom_point(aes(y = test, color = "test")) +
+  coord_cartesian(ylim = c(0,max(loss.aiR$loss[,-3])))
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+```{r}
+new <- aiRvisual(data = train[,-3], layers = loss.aiR$layers, range.size = 10000)
 ```
 
 ```{r}
-#expected answer
-g1 <- c(1,0)
-g2 <- c(0,1)
-```
-
-```{r}
-loss.aiR <- aiRrun(data = train,var.classify = "group",layers = list(layer1,layer2), cycles = 100,batch.size = 60)
-```
-
-```{r}
-new <- aiRvisual(data = train[,-3], layers = loss.aiR[[2]])
-
 ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = new$layer1[,1])) 
+  geom_point(aes(color = new$layer1[,1])) +
+  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
+ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
+  geom_point(aes(color = new$layer1[,2])) +
+  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
+ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
+  geom_point(aes(color = new$layer1[,3])) +
+  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
+ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
+  geom_point(aes(color = new$layer1[,4])) +
+  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
+```
+```{r}
+ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
+  geom_point(aes(color = new$layer2[,1])) +
+  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
+ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
+  geom_point(aes(color = new$layer2[,2])) +
+  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
+```
+
+```{r}
+classify_obj <- aiRclassify(data = new$data_model, factor = levels(train$group), layers = loss.aiR$layers)
+```
+
+```{r}
+ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
+  geom_point(aes(color = as.factor(classify_obj$classify), alpha = classify_obj$node.max)) 
 ```
 
