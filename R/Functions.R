@@ -163,23 +163,7 @@ aiRrun <- function(data,
     } else {
       stop("batch.size must be a numeric integer or left on default \"all\".")
     }
-      
-      
-    #prop <- (correct.train - data.train)/data.train
-    #prop <- mat.opperation(x = loss.prop, y = apply(X = abs(loss.prop), MARGIN = 2, sum), opperation = "/")
-    # for(j in length(layers):1){
-    #   change.w <- matrix(0, ncol = ncol(layers[[j]]$weights), nrow = nrow(layers[[j]]$weights))
-    #   change.b <- rep(0, length(layer[[j]]$bias))
-    #   for(i in 1:length(row.loss)) {
-    #     row.work <- loss.prop[i,]
-    #     change.w <- change.w + mat.opperation(x = abs(layers[[j]]$weights), y = row.work*(abs(row.work/(row.loss[i]))), opperation = "*")
-    #     change.b <- change.b + layers[[j]]$bias*row.work*(abs(row.work/(row.loss[i])))
-    #   }
-    #   layers[[j]]$weights <- layers[[j]]$weights + (change.w/length(row.loss))
-    #   layers[[j]]$bias <- layers[[j]]$bias + (change.b/length(row.loss))
-    # }
     
-    #for(k in 1:train.size) { # how many back propigations should be done
     for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
       row.work <- train.loss$loss.prop[i,]
       row.work <- sqrt(length(row.work))*row.work*(abs(row.work/(train.loss$row.loss[i])))
@@ -200,7 +184,7 @@ aiRrun <- function(data,
       layers[[i]]$change.w <- layers[[i]]$change.w*0
       layers[[i]]$change.b <- layers[[i]]$change.b*0
     }
-    #}
+    
     
     train.loss <- aiRloss(data = aiRtransform(data = data.train[,-index]
                                               , layers = layers),
@@ -216,6 +200,7 @@ aiRrun <- function(data,
   }
   
   aiR <- list(loss, layers)
+  names(aiR) <- c("loss","layers")
 
   return(aiR)
 
@@ -228,6 +213,39 @@ aiRtransform <- function(data, layers) {
     data <- sigmoid(data)
   }
   return(data)
+}
+
+aiRvisual <- function(data, layers, range.size =1000) {
+  ret.data <- vector("list",length(layers)+1)
+  ret.names <- paste("layer",seq(1:length(layers)),sep = "")
+  range.work <- range(data[,1])
+  range.size <- floor((range.size^(1/(ncol(data)))))
+  data.new <- seq(from = floor(range.work[1]),
+                  to = ceiling(range.work[2]), 
+                  by =  diff(c(floor(range.work[1]),ceiling(range.work[2])))/range.size)
+  for(i in 2:length(colnames(data))) {
+    range.work <- range(data[,i])
+    data.work <- seq(from = floor(range.work[1]),
+                    to = ceiling(range.work[2]), 
+                    by =  abs(diff(c(floor(range.work[1]),ceiling(range.work[2])))/range.size))
+    data.new <- cbind(data.new,data.work)
+  }
+  colnames(data.new) <- colnames(data)
+  .test <- paste(colnames(data.new)[1]," = data.new[,",1,"]", sep = "")
+  for(i in 2:ncol(data.new)) {
+    .test <- paste(.test,", ",colnames(data.new)[i]," = data.new[,",i,"]", sep = "")
+  }
+  eval(parse(text = paste("data.new <- merge.multi(",.test,")")))
+  
+  ret.data[[1]] <- data.new
+  for(i in 1:length(layers)) {   #Transform data through layers
+    data.new <- as.matrix(data.new)%*%layers[[i]]$weights
+    data.new <- data.new + layers[[i]]$bias
+    data.new <- sigmoid(data.new)
+    ret.data[[i+1]] <- data.new
+  }
+  names(ret.data) <- c("data_model",ret.names)
+  return(ret.data)  
 }
 
 aiRloss <- function(data, layers, classify) {
@@ -282,4 +300,23 @@ mat.opperation <- function(x,y, opperation){
     mat <- x/(matrix(rep(y, each = nrow(x)), nrow = nrow(x), ncol = ncol(x)))
   } 
   return(mat)
+}
+
+merge.multi <- function(...) {
+  z <- list(...)
+  modes <- mode.type(z)
+  if(is.null(names(z))) {
+    name <- letters[seq(1,length(z))]
+  } else {
+    name <- names(z)
+  }
+  z.new <- interaction(merge(z[[1]],z[[2]]),sep = ",")
+  for(i in 3:(length(z))) {
+    z.new <- interaction(merge(z.new,z[[i]]),sep = ",")
+  }
+  z.new <- as.data.frame(z.new)
+  colnames(z.new) <- "combind"
+  new <- separate(z.new,col = "combind",into = name,sep = ",")
+  new <- correct.mode(df = new,mode.vec = modes)
+  return(new)
 }

@@ -70,3 +70,10 @@ g2 <- c(0,1)
 loss.aiR <- aiRrun(data = train,var.classify = "group",layers = list(layer1,layer2), cycles = 100,batch.size = 60)
 ```
 
+```{r}
+new <- aiRvisual(data = train[,-3], layers = loss.aiR[[2]])
+
+ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
+  geom_point(aes(color = new$layer1[,1])) 
+```
+
