@@ -173,7 +173,7 @@ aiRrun <- function(data,
 
 
   #classification matrix
-  train.loss <- aiRloss(data = data.train[,-index], layers = layers, classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
+  train.loss <- aiRloss(data = data.train, layers = layers, classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
   loss[1,"train"] <- train.loss$total.loss
   test.loss <- aiRloss(data = aiRtransform(data = data.test,
                                            layers = layers),
