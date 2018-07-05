@@ -22,9 +22,9 @@ library(tidyr)
 library(dplyr)
 library(justinmisc)
 library(reshape2)
-library(gapminder)
-library(gganimate)
-library(animation)
+# library(gapminder)
+# library(gganimate)
+# library(animation)
 ```
 
 ```{r}

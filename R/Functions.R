@@ -304,7 +304,7 @@ aiRactivation <- function(data, layers, range.size =1000) {
   for(i in 2:ncol(data.new)) {
     .test <- paste(.test,", ",colnames(data.new)[i]," = data.new[,",i,"]", sep = "")
   }
-  eval(parse(text = paste("data.new <- merge.multi(",.test,")")))
+  eval(parse(text = paste("data.new <- merge_multi(",.test,")")))
 
   ret.data[[1]] <- data.new
   for(i in 1:length(layers)) {   #Transform data through layers
@@ -442,7 +442,7 @@ mat.opperation <- function(x,y, opperation){
   return(mat)
 }
 
-#' @name merge.multi
+#' @name merge_multi
 #'
 #' @description extends merge function to 3 or more vectors
 #'
@@ -453,11 +453,11 @@ mat.opperation <- function(x,y, opperation){
 #'
 #' @examples
 #'
-#' merge.multi(x = c(1,2,3), y = c(4,5,6), z = c(7,8,9))
-#' merge.multi(c(1,2,3),c(4,5,6),c(7,8,9))
+#' merge_multi(x = c(1,2,3), y = c(4,5,6), z = c(7,8,9))
+#' merge_multi(c(1,2,3),c(4,5,6),c(7,8,9))
 #'
 #' @export
-merge.multi <- function(...) {
+merge_multi <- function(...) {
   z <- list(...)
   modes <- mode.type(z)
   if(is.null(names(z))) {
@@ -516,8 +516,8 @@ aiRrate <- function(data, factor, layers) {
 #' for no batches to be made.
 #' @param train.Factor Necessary when train.method set to "Factor". Assign as vector of length 2 in the following form
 #' c("column.index/name","factor.level"). Can assign only column name or index but first level is chosen in this case.
-#' @steps Number of classification captures desired to view
-#' @range.size total amount of data points used to visualize input space.
+#' @param steps Number of classification captures desired to view
+#' @param range.size total amount of data points used to visualize input space.
 #' @param na.rm remove NAs, default set to TRUE. Function likely to fail with NAs
 #'
 #' @return tidy data frame of the classification and max.node at each step
