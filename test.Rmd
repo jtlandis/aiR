@@ -21,6 +21,10 @@ library(magrittr)
 library(tidyr)
 library(dplyr)
 library(justinmisc)
+library(reshape2)
+library(gapminder)
+library(gganimate)
+library(animation)
 ```
 
 ```{r}
@@ -74,7 +78,7 @@ ggplot(data = loss.aiR$loss,aes(x = iteration)) +
 
 
 ```{r}
-new <- aiRvisual(data = train[,-3], layers = loss.aiR$layers, range.size = 10000)
+new <- aiRactivation(data = train[,-3], layers = loss.aiR$layers, range.size = 10000)
 ```
 
 ```{r}
@@ -119,5 +123,18 @@ aiRrate(data = train, factor = "group", layers = loss.aiR$layers)
 .new <- aiRclassify(data = new$data_model, factor = levels(train[,3]), layers = .new2$layers)
 ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
   geom_point(aes(color = as.factor(.new$classify), alpha = .new$node.max)) 
+```
+
+```{r}
+
+```
+
+```{r}
+space.var <- aiRdevelop(data = train,x=x,y=y, var.classify = "group", layers = mylayers, cycles = 3, sample.size = .5, batch.size = 60, steps = 22)
+  gg <- ggplot(data = space.var, aes(x = x, y = y, color = classify, alpha = node.max,)) +
+    geom_point() +
+    facet_wrap(~step)
+  gg
+
 ```
 

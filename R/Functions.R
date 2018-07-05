@@ -1,24 +1,23 @@
-# Hello, world!
-#
-# This is an example function named 'hello'
-# which prints 'Hello, world!'.
-#
-# You can learn more about package authoring with RStudio at:
-#
-#   http://r-pkgs.had.co.nz/
-#
-# Some useful keyboard shortcuts for package authoring:
-#
-#   Build and Reload Package:  'Ctrl + Shift + B'
-#   Check Package:             'Ctrl + Shift + E'
-#   Test Package:              'Ctrl + Shift + T'
+#' @import reshape2
+#' @import justinmisc
 
-
+#' @name sigmoid
+#'
+#' @param x numeric vector
+#'
+#' @return sigmoid value for each x
+#'
+#' @export
 sigmoid <- function(x) {
   (1 / (1 + exp(-x)))
 }
 
-
+#' @name aiRlayer
+#'
+#' @param dim1 row dimensions
+#' @param dim2 column dimensions
+#'
+#' @return generates aiRlayer object of specified dimensions
 aiRlayer <- function(dim1,dim2) {
   weights <- matrix(runif(n = dim1*dim2, min = -10, max = 10), nrow = dim1, ncol = dim2)
   change.w <- matrix(0, nrow = dim1, ncol = dim2)
@@ -30,9 +29,47 @@ aiRlayer <- function(dim1,dim2) {
   return(layer)
 
 }
+#' @name is.aiRlayer
+#'
+#' @param x object
+#'
+#' @return logical value
+#'
+#' @export
+is.aiRlayer <- function(x) inherits(x, "aiRlayer")
+
+#' @name aiRnet
+#'
+#' @description Builds a network of aiRlayers objects with random weight and bias as a list
+#'
+#' @param nodes specifies how many nodes in each layer,
+#' first value should equal input values, last value should
+#' equal classification values
+#'
+#' @return generates aiRlayer object of specified dimensions
+#'
+#' @export
+aiRnet <- function(nodes) {
+  n <- length(nodes)-1
+  aiR <- vector("list",n)
+  for(i in 1:n){
+    aiR[i] <- aiRlayer(nodes[i],nodes[i+1])
+  }
+  class(aiR) <- "aiRnet"
+  return(aiR)
+}
+#' @name is.aiRnet
+#'
+#' @param x object
+#'
+#' @return logical value
+#'
+#' @export
+is.aiRnet <- function(x) inherits(x, "aiRnet")
+
 #' @name aiRsubset
 #'
-#' #' @param train.method Method to train data. "Sample" to take a sample of values in data. "Factor"
+#' @param train.method Method to train data. "Sample" to take a sample of values in data. "Factor"
 #' @param sample.size Number between (0-1) that modifies how much of training data is used.
 #' @param train.Factor Necessary when train.method set to "Factor". Assign as vector of length 2 in the following form
 #' c("column.index/name","factor.level"). Can assign only column name or index but first level is chosen in this case.
@@ -77,7 +114,7 @@ aiRsubset <- function(x, train.method, sample.size, train.Factor = NULL) {
   sub <- seq(1,total.length) %in% sample.rows
   return(sub)
 }
-is.aiRlayer <- function(x) inherits(x, "aiRlayer")
+
 #' @name aiRrun
 #'
 #' @param data Data frame that contains all named columns needed
@@ -94,6 +131,10 @@ is.aiRlayer <- function(x) inherits(x, "aiRlayer")
 #' @param train.Factor Necessary when train.method set to "Factor". Assign as vector of length 2 in the following form
 #' c("column.index/name","factor.level"). Can assign only column name or index but first level is chosen in this case.
 #' @param na.rm remove NAs, default set to TRUE. Function likely to fail with NAs
+#'
+#' @return data frame of loss and the aiRnet of the training values
+#'
+#' @export
 aiRrun <- function(data,
                    var.classify,
                    layers,
@@ -103,7 +144,9 @@ aiRrun <- function(data,
                    batch.size="all",
                    train.Factor = NULL,
                    na.rm=TRUE) {
-
+  if(!is.aiRnet(layers)){
+    stop("layers must be of class \"aiRnet\"")
+  }
   n <- length(layers)             #how many layers
   index <- justinmisc::index.o.coln(vec = var.classify, v.size = 1, v.name = "var.classify", name.col = colnames(data))   #index of classify column
   if(isTRUE(na.rm)) {
@@ -202,12 +245,24 @@ aiRrun <- function(data,
 
   aiR <- list(loss, layers)
   names(aiR) <- c("loss","layers")
+  class(aiR$layers) <- "aiRnet"
 
   return(aiR)
 
 }
 
+#' @name aiRtransform
+#'
+#' @param data data of input values
+#' @param layers aiRnet object
+#'
+#' @return returns layers output of data
+#'
+#' @export
 aiRtransform <- function(data, layers) {
+  if(!is.aiRnet(layers)){
+    stop("layers must be of class \"aiRnet\"")
+  }
   for(i in 1:length(layers)) {   #Transform data through layers
     data <- as.matrix(data )%*%layers[[i]]$weights
     data <- mat.opperation(x = data, y = layers[[i]]$bias, opperation = "+")
@@ -216,8 +271,20 @@ aiRtransform <- function(data, layers) {
   return(data)
 }
 
-aiRvisual <- function(data, layers, range.size =1000) {
-
+#' @name aiRactivation
+#'
+#' @param data data of input values
+#' @param layers aiRnet object
+#' @param range.size total amount of data points used to visualize input space.
+#'
+#' @return returns list of data frames for each aiRlayer in layers. Data frames show
+#' activation level.
+#'
+#' @export
+aiRactivation <- function(data, layers, range.size =1000) {
+  if(!is.aiRnet(layers)){
+    stop("layers must be of class \"aiRnet\"")
+  }
   ret.data <- vector("list",length(layers)+1)
   ret.names <- paste("layer",seq(1:length(layers)),sep = "")
   range.work <- range(data[,1])
@@ -250,8 +317,23 @@ aiRvisual <- function(data, layers, range.size =1000) {
   return(ret.data)
 }
 
+#' @name aiRclassify
+#'
+#' @description classifies each observation by taking the max value of the last layer.
+#'
+#' @param data data of input values
+#' @param factor character vector of factors to classify. levels must be in same order as
+#' levels presented in original data.
+#' @param layers aiRnet object
+#'
+#' @return returns a list of classification values for each
+#' observation along with its activation in the last layer.
+#'
+#' @export
 aiRclassify <- function(data, factor, layers) {
-
+  if(!is.aiRnet(layers)){
+    stop("layers must be of class \"aiRnet\"")
+  }
   trans <- aiRtransform(data = data, layers = layers)
   node.max <- apply(trans, 1, max)
   classify <- factor[apply(trans==node.max, 1, which)]
@@ -260,8 +342,23 @@ aiRclassify <- function(data, factor, layers) {
   return(ret)
 }
 
-
+#' @name aiRloss
+#'
+#' @description loss function used on data in training.
+#'
+#' @param data data of input values
+#' @param layers aiRnet object
+#' @param classify vector of correct training factors.
+#'
+#' @return returns aiRloss object which contains;
+#' loss.prop: how far away each node was from desired activation,
+#' row.loss: the total loss for an observation,
+#' total.loss: the total loss for a batch of examples.
+#' @export
 aiRloss <- function(data, layers, classify) {
+  if(!is.aiRnet(layers)){
+    stop("layers must be of class \"aiRnet\"")
+  }
   class.mat <- diag(nrow = ncol(layers[[length(layers)]]$weights),ncol = ncol(layers[[length(layers)]]$weights))
   correct <- class.mat[classify,]
   loss.prop <- (apply((correct - data),2,neg.exp)) #squared loss, directional (negative used) loss shows direction it should move.
@@ -273,6 +370,14 @@ aiRloss <- function(data, layers, classify) {
   return(loss)
 }
 
+#' @name aiRbatch
+#'
+#' @description randomly splits data into batches through sample. No repeated samples.
+#'
+#' @param data data of input values
+#' @param batch.size how many observations are used per batch
+#'
+#' @return a list of data.frames containing random samples of input data.
 aiRbatch <- function(data, batch.size) {
 
   n <- nrow(data)
@@ -288,6 +393,17 @@ aiRbatch <- function(data, batch.size) {
   names(batches) <- batch.names
   return(batches)
 }
+
+#' @name neg.exp
+#'
+#' @description exponentiates x vector and retains negative values.
+#'
+#' @param x vector of numeric values
+#' @param power value to exponentiate by. default set to 2.
+#'
+#' @return vector of numeric values equal in length to x
+#'
+#' @export
 neg.exp <- function(x, power = 2) {
   .t <- x<0
   x <- x^(power)
@@ -295,7 +411,17 @@ neg.exp <- function(x, power = 2) {
   return(x)
 }
 
-
+#' @name mat.opperation
+#'
+#' @description allows simple operations between matrix and constant vector. column size of x must equal length of y
+#'
+#' @param x matrix of column size m, row size n
+#' @param y vector of length m
+#' @param opperation opperation to use: +, -, *, /
+#'
+#' @return returns n by m matrix where values of y are done onto the columns of x.
+#'
+#' @export
 mat.opperation <- function(x,y, opperation){
   type.opperation <- c("+","-","*","/")
   if(!is.element(opperation, type.opperation)) {
@@ -316,6 +442,21 @@ mat.opperation <- function(x,y, opperation){
   return(mat)
 }
 
+#' @name merge.multi
+#'
+#' @description extends merge function to 3 or more vectors
+#'
+#' @param ... vectors to be merged. argument names become column names in returned value.
+#' If no arguments specified, default column names set to LETTERS set.
+#'
+#' @return data frame of combinded vectors.
+#'
+#' @examples
+#'
+#' merge.multi(x = c(1,2,3), y = c(4,5,6), z = c(7,8,9))
+#' merge.multi(c(1,2,3),c(4,5,6),c(7,8,9))
+#'
+#' @export
 merge.multi <- function(...) {
   z <- list(...)
   modes <- mode.type(z)
@@ -337,16 +478,91 @@ merge.multi <- function(...) {
   return(new)
 }
 
-ReLU <- function(x) {
-  x[x<0] <- 0
-  return(x)
-}
-
+#' @name aiRrate
+#'
+#' @description reports error rate of network
+#'
+#' @param data data of input values
+#' @param factor character vector of factors to classify. levels must be in same order as
+#' levels presented in original data.
+#' @param layers aiRnet object
+#'
+#' @return error rate of aiRnet on data
+#'
+#' @export
 aiRrate <- function(data, factor, layers) {
+  if(!is.aiRnet(layers)){
+    stop("layers must be of class \"aiRnet\"")
+  }
   index <- index.o.coln(vec = factor, v.size = 1, v.name = "factor", name.col = colnames(data))
   data.save <- data
   data <- data[,-index]
   classify <- aiRclassify(data = data, factor = levels(data.save[,index]), layers = layers)
-  rate <- mean(data.save[,index]==classify$classify)
+  rate <- 1-(mean(data.save[,index]==classify$classify))
   return(rate)
 }
+
+#' @name aiRdevelop
+#'
+#' @param data Data frame that contains all named columns needed
+#' @param var.classify index or column name of vector that contains classifying values
+#' @param layers aiRnet object
+#' @param train.method Method to save internal subset of data as the training data. "Sample" to take
+#'  a random sample of all rows in data as training set. "Factor" to indicate if you are training
+#'  on rows containing a particular factor level.
+#' @param sample.size Number between (0-1) that modifies how much of desired train.method data is used.
+#' Default set to 0.5. Excluded rows will be used as test examples and not affect aiRlayers.
+#' @param batch.size Number indicating how many rows to make batches from training sample. Default set to "all"
+#' for no batches to be made.
+#' @param train.Factor Necessary when train.method set to "Factor". Assign as vector of length 2 in the following form
+#' c("column.index/name","factor.level"). Can assign only column name or index but first level is chosen in this case.
+#' @steps Number of classification captures desired to view
+#' @range.size total amount of data points used to visualize input space.
+#' @param na.rm remove NAs, default set to TRUE. Function likely to fail with NAs
+#'
+#' @return tidy data frame of the classification and max.node at each step
+#'
+#' @export
+aiRdevelop <- function(data,
+                       var.classify,
+                       layers,
+                       train.method = "Sample",
+                       sample.size = .5,
+                       batch.size,
+                       train.Factor = NULL,
+                       steps = 15,
+                       range.size = 1000) {
+  if(!is.aiRnet(layers)){
+    stop("layers must be of class \"aiRnet\"")
+  }
+  n <- floor(floor(nrow(data)*sample.size)/batch.size)
+  index <- index.o.coln(vec = var.classify, v.size = 1, v.name = "var.classify", name.col = colnames(data))
+  data.n.class <- data[,-index]
+  space.var <- aiRactivation(data = data.n.class, layers = layers, range.size = range.size)
+  space.var <- space.var$data_model
+  space.var.save <- space.var
+  m.t <- mode.type(space.var)
+  for(i in 1:steps) {
+    if(i==1){
+      step.loss <- aiRrun(data = data, var.classify = var.classify, train.method = train.method,layers = layers, cycles = n, sample.size = sample.size, batch.size = batch.size, train.Factor = train.Factor)
+    } else {
+      step.loss <- aiRrun(data = data, var.classify = var.classify, train.method = train.method,layers = step.loss$layers, cycles = n, sample.size = sample.size, batch.size = batch.size)
+    }
+    new <- aiRclassify(data = space.var.save, factor = levels(data[,index]),layers = step.loss$layers)
+    step <- interaction(new$classify, new$node.max, sep = "_break_")
+    eval(parse(text = paste("space.var$step",i," <- step", sep = "")))
+  }
+
+  space.var <- melt(space.var, id.vars = commoncol(space.var, data.n.class), variable.name = "step")
+  space.var <- separate(data = as.data.frame(space.var), col = "value", into = c("classify","node.max"),sep = "_break_")
+  space.var <- correct.mode(space.var, mode.vec = c(m.t,"Factor","Factor","num"))
+  browser()
+  space.var$step <- factor(space.var$step, levels=c(paste("step",1:steps, sep = "")))
+
+  # gg <- ggplot(data = space.var, aes(x = x, y = y, color = classify, alpha = node.max,frame = step)) +
+  #   geom_point()
+  #
+  # gganimate(gg)
+  return(space.var)
+}
+
