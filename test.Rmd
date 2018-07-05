@@ -22,6 +22,7 @@ library(tidyr)
 library(dplyr)
 library(justinmisc)
 library(reshape2)
+library(aiR)
 # library(gapminder)
 # library(gganimate)
 # library(animation)
@@ -52,9 +53,10 @@ ggplot(train, aes(x,y, color = group)) +
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 ```{r}
-layer1 <- aiRlayer(2,4)
-layer2 <- aiRlayer(4,2)
-mylayers <- list(layer1, layer2)
+mylayers <- aiRnet(c(2,4,2))
+# layer1 <- aiRlayer(2,4)
+# layer2 <- aiRlayer(4,2)
+# mylayers <- list(layer1, layer2)
 ```
 
 
@@ -71,6 +73,7 @@ loss.aiR$loss$iteration <- as.numeric(rownames(loss.aiR$loss))
 ggplot(data = loss.aiR$loss,aes(x = iteration)) +
   geom_point(aes(y = train,color = "train")) +
   geom_point(aes(y = test, color = "test")) +
+  labs(list(y = "loss"))
   coord_cartesian(ylim = c(0,max(loss.aiR$loss[,-3])))
   theme(axis.text.x = element_text(angle = 90))
 ```
@@ -119,18 +122,7 @@ aiRrate(data = train, factor = "group", layers = loss.aiR$layers)
 
 
 ```{r}
-.new2 <- aiRrun(data = train, var.classify = "group", layers = .new2$layers,cycles = 4, sample.size = .9,batch.size = 60)
-.new <- aiRclassify(data = new$data_model, factor = levels(train[,3]), layers = .new2$layers)
-ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = as.factor(.new$classify), alpha = .new$node.max)) 
-```
-
-```{r}
-
-```
-
-```{r}
-space.var <- aiRdevelop(data = train,x=x,y=y, var.classify = "group", layers = mylayers, cycles = 3, sample.size = .5, batch.size = 60, steps = 22)
+space.var <- aiRdevelop(data = train, var.classify = "group", layers = mylayers, sample.size = 1, batch.size = 60, steps = 22)
   gg <- ggplot(data = space.var, aes(x = x, y = y, color = classify, alpha = node.max,)) +
     geom_point() +
     facet_wrap(~step)

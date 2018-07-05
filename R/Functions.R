@@ -53,7 +53,7 @@ aiRnet <- function(nodes) {
   n <- length(nodes)-1
   aiR <- vector("list",n)
   for(i in 1:n){
-    aiR[i] <- aiRlayer(nodes[i],nodes[i+1])
+    aiR[[i]] <- aiRlayer(nodes[i],nodes[i+1])
   }
   class(aiR) <- "aiRnet"
   return(aiR)
@@ -556,7 +556,6 @@ aiRdevelop <- function(data,
   space.var <- melt(space.var, id.vars = commoncol(space.var, data.n.class), variable.name = "step")
   space.var <- separate(data = as.data.frame(space.var), col = "value", into = c("classify","node.max"),sep = "_break_")
   space.var <- correct.mode(space.var, mode.vec = c(m.t,"Factor","Factor","num"))
-  browser()
   space.var$step <- factor(space.var$step, levels=c(paste("step",1:steps, sep = "")))
 
   # gg <- ggplot(data = space.var, aes(x = x, y = y, color = classify, alpha = node.max,frame = step)) +
