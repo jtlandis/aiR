@@ -1,5 +1,6 @@
 #' @import reshape2
 #' @import justinmisc
+#' @import stringr
 
 #' @name sigmoid
 #'
@@ -154,6 +155,11 @@ aiRrun <- function(data,
   } else {
     warning("na.rm set to FALSE, NA values not sutable for matrix multiplication. Set NA to place holder value.")
   }
+  if(!is.factor(data[,index])) {
+    stop("var.classify must be assigned a factor vector as a classification variable.")
+  } else {
+    class.levels <- levels(data[,index])
+  }
   #How much of data is training, what method to train against
   data.save <- data
   sample.rows <- aiRsubset(x = data, train.method = train.method, sample.size = sample.size, train.Factor = train.Factor)
@@ -173,11 +179,11 @@ aiRrun <- function(data,
 
 
   #classification matrix
-  train.loss <- aiRloss(data = data.train, layers = layers, classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
+  train.loss <- aiRloss(data = data.train, class.levels = class.levels, classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
   loss[1,"train"] <- train.loss$total.loss
   test.loss <- aiRloss(data = aiRtransform(data = data.test,
                                            layers = layers),
-                       layers = layers,
+                       class.levels = class.levels,
                        classify = classify.test)
   loss[1,"test"] <- test.loss$total.loss
 
@@ -210,11 +216,11 @@ aiRrun <- function(data,
 
     train.loss <- aiRloss(data = aiRtransform(data = data.train[,-index]
                                               , layers = layers),
-                          layers = layers,
+                          class.levels = class.levels,
                           classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
     test.loss <- aiRloss(data = aiRtransform(data = data.test,
                                              layers = layers),
-                         layers = layers,
+                         class.levels = class.levels,
                          classify = classify.test)
     loss[k+1,"train"] <- train.loss$total.loss
     loss[k+1,"test"] <- test.loss$total.loss
@@ -336,7 +342,13 @@ aiRclassify <- function(data, factor, layers) {
   }
   trans <- aiRtransform(data = data, layers = layers)
   node.max <- apply(trans, 1, max)
-  classify <- factor[apply(trans==node.max, 1, which)]
+  indexes <- apply(trans==node.max, 1, which)
+  if(class(indexes)=="list") {
+    warning("for at least one observation, more than one node have the same max activation. More training advised.")
+    classify <- unlist(lapply(lapply(indexes,FUN = function(x, y = factor) {y[x]}),str_flatten))
+  } else {
+    classify <- factor[indexes]
+  }
   ret <- list(classify, node.max)
   names(ret) <- c("classify","node.max")
   return(ret)
@@ -346,8 +358,9 @@ aiRclassify <- function(data, factor, layers) {
 #'
 #' @description loss function used on data in training.
 #'
-#' @param data data of input values
-#' @param layers aiRnet object
+#' @param data aiRtransform data. data of activation nodes
+#' @param class.levels character vector that identifies the
+#' ordering of classification factor levels.
 #' @param classify vector of correct training factors.
 #'
 #' @return returns aiRloss object which contains;
@@ -355,11 +368,11 @@ aiRclassify <- function(data, factor, layers) {
 #' row.loss: the total loss for an observation,
 #' total.loss: the total loss for a batch of examples.
 #' @export
-aiRloss <- function(data, layers, classify) {
+aiRloss <- function(data, class.levels, classify) {
   if(!is.aiRnet(layers)){
     stop("layers must be of class \"aiRnet\"")
   }
-  class.mat <- diag(nrow = ncol(layers[[length(layers)]]$weights),ncol = ncol(layers[[length(layers)]]$weights))
+  class.mat <- diag(nrow = length(class.levels),ncol = length(class.levels))
   correct <- class.mat[classify,]
   loss.prop <- (apply((correct - data),2,neg.exp)) #squared loss, directional (negative used) loss shows direction it should move.
   row.loss <- apply(abs(loss.prop),1,sum)
