@@ -185,21 +185,21 @@ aiRrun <- function(data,
   data.train.save <- data.train
   data.test <-  data[!sample.rows,-index]
 
-  loss <- data.frame(train = rep(NA,cycles+1), test = rep(NA,cycles+1))
+  loss <- data.frame(train = rep(NA,cycles), test = rep(NA,cycles))
   rownames(loss) <- as.character(seq(0,cycles))
 
 
-  data.train <- aiRtransform(data = data.train[,-index], aiRnet = aiRnet)
+  #data.train <- aiRtransform(data = data.train[,-index], aiRnet = aiRnet)
 
 
   #classification matrix
-  train.loss <- aiRloss(data = data.train, class.levels = class.levels, classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
-  loss[1,"train"] <- train.loss$total.loss
-  test.loss <- aiRloss(data = aiRtransform(data = data.test,
-                                           aiRnet = aiRnet),
-                       class.levels = class.levels,
-                       classify = classify.test)
-  loss[1,"test"] <- test.loss$total.loss
+  # train.loss <- aiRloss(data = data.train, class.levels = class.levels, classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
+  # loss$train[1] <- train.loss$total.loss
+  # test.loss <- aiRloss(data = aiRtransform(data = data.test,
+  #                                          aiRnet = aiRnet),
+  #                      class.levels = class.levels,
+  #                      classify = classify.test)
+  # loss$test[1] <- test.loss$total.loss
 
   if(is.numeric(batch.size)) {
     if(batch.size<0) {
@@ -236,8 +236,8 @@ aiRrun <- function(data,
                                              aiRnet = aiRnet),
                          class.levels = class.levels,
                          classify = classify.test)
-    loss[k+1,"train"] <- train.loss$total.loss
-    loss[k+1,"test"] <- test.loss$total.loss
+    loss$train[k] <- train.loss$total.loss
+    loss$test[k] <- test.loss$total.loss
     for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
       aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop[i,],
                             row.loss = train.loss$row.loss[i],
