@@ -4,6 +4,8 @@
 
 #' @name sigmoid
 #'
+#' @title sigmoid
+#'
 #' @param x numeric vector
 #'
 #' @return sigmoid value for each x
@@ -14,6 +16,8 @@ sigmoid <- function(x) {
 }
 
 #' @name aiRlayer
+#'
+#' @title aiRlayer
 #'
 #' @param dim1 row dimensions
 #' @param dim2 column dimensions
@@ -32,6 +36,8 @@ aiRlayer <- function(dim1,dim2) {
 }
 #' @name is.aiRlayer
 #'
+#' @title is.aiRlayer
+#'
 #' @param x object
 #'
 #' @return logical value
@@ -40,6 +46,8 @@ aiRlayer <- function(dim1,dim2) {
 is.aiRlayer <- function(x) inherits(x, "aiRlayer")
 
 #' @name aiRnet
+#'
+#' @title aiRnet
 #'
 #' @description Builds a network of aiRlayers objects with random weight and bias as a list
 #'
@@ -61,6 +69,8 @@ aiRnet <- function(nodes) {
 }
 #' @name is.aiRnet
 #'
+#' @title is.aiRnet
+#'
 #' @param x object
 #'
 #' @return logical value
@@ -69,6 +79,8 @@ aiRnet <- function(nodes) {
 is.aiRnet <- function(x) inherits(x, "aiRnet")
 
 #' @name aiRsubset
+#'
+#' @title aiRsubset
 #'
 #' @param train.method Method to train data. "Sample" to take a sample of values in data. "Factor"
 #' @param sample.size Number between (0-1) that modifies how much of training data is used.
@@ -117,6 +129,8 @@ aiRsubset <- function(x, train.method, sample.size, train.Factor = NULL) {
 }
 
 #' @name aiRrun
+#'
+#' @title aiRrun
 #'
 #' @param data Data frame that contains all named columns needed
 #' @param var.classify index or column name of vector that contains classifying values
@@ -259,6 +273,8 @@ aiRrun <- function(data,
 
 #' @name aiRtransform
 #'
+#' @title aiRtransform
+#'
 #' @param data data of input values
 #' @param layers aiRnet object
 #'
@@ -278,6 +294,8 @@ aiRtransform <- function(data, layers) {
 }
 
 #' @name aiRactivation
+#'
+#' @title aiRactivation
 #'
 #' @param data data of input values
 #' @param layers aiRnet object
@@ -325,6 +343,8 @@ aiRactivation <- function(data, layers, range.size =1000) {
 
 #' @name aiRclassify
 #'
+#' @title aiRclassify
+#'
 #' @description classifies each observation by taking the max value of the last layer.
 #'
 #' @param data data of input values
@@ -356,6 +376,8 @@ aiRclassify <- function(data, factor, layers) {
 
 #' @name aiRloss
 #'
+#' @title aiRloss
+#'
 #' @description loss function used on data in training.
 #'
 #' @param data aiRtransform data. data of activation nodes
@@ -385,6 +407,8 @@ aiRloss <- function(data, class.levels, classify) {
 
 #' @name aiRbatch
 #'
+#' @title aiRbatch
+#'
 #' @description randomly splits data into batches through sample. No repeated samples.
 #'
 #' @param data data of input values
@@ -409,6 +433,8 @@ aiRbatch <- function(data, batch.size) {
 
 #' @name neg.exp
 #'
+#' @title neg.exp
+#'
 #' @description exponentiates x vector and retains negative values.
 #'
 #' @param x vector of numeric values
@@ -425,6 +451,8 @@ neg.exp <- function(x, power = 2) {
 }
 
 #' @name mat.opperation
+#'
+#' @title mat.opperation
 #'
 #' @description allows simple operations between matrix and constant vector. column size of x must equal length of y
 #'
@@ -456,6 +484,8 @@ mat.opperation <- function(x,y, opperation){
 }
 
 #' @name merge_multi
+#'
+#' @title merge_multi
 #'
 #' @description extends merge function to 3 or more vectors
 #'
@@ -493,6 +523,8 @@ merge_multi <- function(...) {
 
 #' @name aiRrate
 #'
+#' @title aiRrate
+#'
 #' @description reports error rate of network
 #'
 #' @param data data of input values
@@ -526,6 +558,8 @@ aiRrate <- function(data, factor, layers, report.class = FALSE) {
 }
 
 #' @name aiRdevelop
+#'
+#' @title aiRdevelop
 #'
 #' @param data Data frame that contains all named columns needed
 #' @param var.classify index or column name of vector that contains classifying values
