@@ -186,7 +186,7 @@ aiRrun <- function(data,
   data.test <-  data[!sample.rows,-index]
 
   loss <- data.frame(train = rep(NA,cycles), test = rep(NA,cycles))
-  rownames(loss) <- as.character(seq(0,cycles))
+  rownames(loss) <- as.character(seq(1,cycles))
 
 
   #data.train <- aiRtransform(data = data.train[,-index], aiRnet = aiRnet)
@@ -207,7 +207,7 @@ aiRrun <- function(data,
     }
     nbatch <- floor(nrow(data.train)/(batch.size))
   }
-
+browser()
   for(k in 1:cycles) {
     if(is.numeric(batch.size)) {
       if(k%%nbatch==1) {
@@ -246,7 +246,7 @@ aiRrun <- function(data,
                             n = n)
     }
     last.loss <- aiRnet
-    aiRnet <- aiRfresh(aiRnet = aiRnet, n = n)
+    aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
   }
 
   aiR <- list(loss, aiRnet)
@@ -293,14 +293,15 @@ aiRrowdelta <- function(loss.prop,
 #' @title aiRfresh
 #'
 #' @param aiRnet aiRnet object
+#' @param rows number of rows in a batch
 #' @param n length of aiRnet object
 #'
 #' @return returns aiRnet object with change.w and change.b added
 #' to weights and bias respectively
-aiRfresh <- function(aiRnet, n) {
+aiRfresh <- function(aiRnet, rows, n) {
   for(i in 1:n) {
-    aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w/length(train.loss$row.loss)
-    aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b/length(train.loss$row.loss)
+    aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w/rows
+    aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b/rows
     aiRnet[[i]]$weights <- aiRnet[[i]]$weights + aiRnet[[i]]$change.w
     aiRnet[[i]]$bias <- aiRnet[[i]]$bias + aiRnet[[i]]$change.b
     aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w*0

@@ -12,7 +12,7 @@ first value should equal input values, last value should
 equal classification values}
 }
 \value{
-generates aiRlayer object of specified dimensions
+generates aiRnet object of specified dimensions
 }
 \description{
 Builds a network of aiRlayers objects with random weight and bias as a list

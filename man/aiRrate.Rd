@@ -4,7 +4,7 @@
 \alias{aiRrate}
 \title{aiRrate}
 \usage{
-aiRrate(data, factor, layers, report.class = FALSE)
+aiRrate(data, factor, aiRnet, report.class = FALSE)
 }
 \arguments{
 \item{data}{data of input values}
@@ -12,7 +12,7 @@ aiRrate(data, factor, layers, report.class = FALSE)
 \item{factor}{character vector of factors to classify. levels must be in same order as
 levels presented in original data.}
 
-\item{layers}{aiRnet object}
+\item{aiRnet}{aiRnet object}
 
 \item{report.class}{report results from aiRclassify}
 }

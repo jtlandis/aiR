@@ -4,13 +4,13 @@
 \alias{aiRtransform}
 \title{aiRtransform}
 \usage{
-aiRtransform(data, layers)
+aiRtransform(data, aiRnet)
 }
 \arguments{
 \item{data}{data of input values}
 
-\item{layers}{aiRnet object}
+\item{aiRnet}{aiRnet object}
 }
 \value{
-returns layers output of data
+returns aiRnet output of data
 }

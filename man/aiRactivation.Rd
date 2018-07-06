@@ -4,16 +4,16 @@
 \alias{aiRactivation}
 \title{aiRactivation}
 \usage{
-aiRactivation(data, layers, range.size = 1000)
+aiRactivation(data, aiRnet, range.size = 1000)
 }
 \arguments{
 \item{data}{data of input values}
 
-\item{layers}{aiRnet object}
+\item{aiRnet}{aiRnet object}
 
 \item{range.size}{total amount of data points used to visualize input space.}
 }
 \value{
-returns list of data frames for each aiRlayer in layers. Data frames show
+returns list of data frames for each aiRlayer in aiRnet. Data frames show
 activation level.
 }

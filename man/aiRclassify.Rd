@@ -4,7 +4,7 @@
 \alias{aiRclassify}
 \title{aiRclassify}
 \usage{
-aiRclassify(data, factor, layers)
+aiRclassify(data, factor, aiRnet)
 }
 \arguments{
 \item{data}{data of input values}
@@ -12,7 +12,7 @@ aiRclassify(data, factor, layers)
 \item{factor}{character vector of factors to classify. levels must be in same order as
 levels presented in original data.}
 
-\item{layers}{aiRnet object}
+\item{aiRnet}{aiRnet object}
 }
 \value{
 returns a list of classification values for each

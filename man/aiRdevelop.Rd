@@ -4,7 +4,7 @@
 \alias{aiRdevelop}
 \title{aiRdevelop}
 \usage{
-aiRdevelop(data, var.classify, layers, train.method = "Sample",
+aiRdevelop(data, var.classify, aiRnet, train.method = "Sample",
   sample.size = 0.5, batch.size, train.Factor = NULL, steps = 15,
   range.size = 1000)
 }
@@ -13,14 +13,14 @@ aiRdevelop(data, var.classify, layers, train.method = "Sample",
 
 \item{var.classify}{index or column name of vector that contains classifying values}
 
-\item{layers}{aiRnet object}
+\item{aiRnet}{aiRnet object}
 
 \item{train.method}{Method to save internal subset of data as the training data. "Sample" to take
 a random sample of all rows in data as training set. "Factor" to indicate if you are training
 on rows containing a particular factor level.}
 
 \item{sample.size}{Number between (0-1) that modifies how much of desired train.method data is used.
-Default set to 0.5. Excluded rows will be used as test examples and not affect aiRlayers.}
+Default set to 0.5. Excluded rows will be used as test examples and not affect aiRaiRnet.}
 
 \item{batch.size}{Number indicating how many rows to make batches from training sample. Default set to "all"
 for no batches to be made.}
