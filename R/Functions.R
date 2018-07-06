@@ -499,20 +499,30 @@ merge_multi <- function(...) {
 #' @param factor character vector of factors to classify. levels must be in same order as
 #' levels presented in original data.
 #' @param layers aiRnet object
+#' @param report.class report results from aiRclassify
 #'
 #' @return error rate of aiRnet on data
 #'
 #' @export
-aiRrate <- function(data, factor, layers) {
+aiRrate <- function(data, factor, layers, report.class = FALSE) {
   if(!is.aiRnet(layers)){
     stop("layers must be of class \"aiRnet\"")
+  }
+  if(!is.element(report.class, c(TRUE,FALSE))){
+    stop("report.class must be logical, either: TRUE or FALSE")
   }
   index <- index.o.coln(vec = factor, v.size = 1, v.name = "factor", name.col = colnames(data))
   data.save <- data
   data <- data[,-index]
   classify <- aiRclassify(data = data, factor = levels(data.save[,index]), layers = layers)
   rate <- 1-(mean(data.save[,index]==classify$classify))
-  return(rate)
+  if(report.class) {
+    ret <- list(rate, classify$classify, classify$node.max)
+    names(ret) <- c("MeanError","classify","node.max")
+  } else {
+    ret <- rate
+  }
+  return(ret)
 }
 
 #' @name aiRdevelop
