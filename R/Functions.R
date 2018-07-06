@@ -259,8 +259,6 @@ aiRrun <- function(data,
       layers[[i]]$change.w <- layers[[i]]$change.w*0
       layers[[i]]$change.b <- layers[[i]]$change.b*0
     }
-
-
   }
 
   aiR <- list(loss, layers)
@@ -391,9 +389,6 @@ aiRclassify <- function(data, factor, layers) {
 #' total.loss: the total loss for a batch of examples.
 #' @export
 aiRloss <- function(data, class.levels, classify) {
-  if(!is.aiRnet(layers)){
-    stop("layers must be of class \"aiRnet\"")
-  }
   class.mat <- diag(nrow = length(class.levels),ncol = length(class.levels))
   correct <- class.mat[classify,]
   loss.prop <- (apply((correct - data),2,neg.exp)) #squared loss, directional (negative used) loss shows direction it should move.
@@ -472,13 +467,13 @@ mat.opperation <- function(x,y, opperation){
     stop("column of x must equal length of y.")
   }
   if(opperation=="+"){
-    mat <- x+(matrix(rep(y, each = nrow(x)), nrow = nrow(x), ncol = ncol(x)))
+    mat <- sweep(x, 2, y, "+")
   } else if(opperation=="-"){
-    mat <- x-(matrix(rep(y, each = nrow(x)), nrow = nrow(x), ncol = ncol(x)))
+    mat <- sweep(x, 2, y, "-")
   } else if(opperation=="*"){
-    mat <- x*(matrix(rep(y, each = nrow(x)), nrow = nrow(x), ncol = ncol(x)))
+    mat <- sweep(x, 2, y, "*")
   } else if(opperation=="/"){
-    mat <- x/(matrix(rep(y, each = nrow(x)), nrow = nrow(x), ncol = ncol(x)))
+    mat <- sweep(x, 2, y, "/")
   }
   return(mat)
 }
