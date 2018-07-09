@@ -6,7 +6,7 @@
 \usage{
 aiRrun(data, var.classify, aiRnet, cycles = 100, train.method = "Sample",
   sample.size = 0.5, batch.size = "all", train.Factor = NULL,
-  na.rm = TRUE)
+  test = FALSE, na.rm = TRUE)
 }
 \arguments{
 \item{data}{Data frame that contains all named columns needed}

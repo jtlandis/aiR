@@ -14,7 +14,7 @@ levels presented in original data.}
 
 \item{aiRnet}{aiRnet object}
 
-\item{report.class}{report results from aiRclassify}
+\item{report.class}{report results from aiRclassify, Default set to FALSE}
 }
 \value{
 error rate of aiRnet on data
