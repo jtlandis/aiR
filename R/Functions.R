@@ -121,6 +121,9 @@ aiRrun <- function(data,
   } else {
     warning("na.rm set to FALSE, NA values not sutable for matrix multiplication. Set NA to place holder value.")
   }
+  if(!is.element(test, c(TRUE,FALSE))) {
+    stop("test must be either TRUE or FALSE")
+  }
   if(!is.factor(data[,index])) {
     stop("var.classify must be assigned a factor vector as a classification variable.")
   } else {
@@ -128,7 +131,7 @@ aiRrun <- function(data,
   }
   #How much of data is training, what method to train against
   sample.rows <- aiRsubset(x = data, train.method = train.method, sample.size = sample.size, train.Factor = train.Factor)
-  if((isFALSE(test))) {
+  if((!test)) {
     aiR <- aiRrun_train(data = data,
                         index = index,
                         n = n,
