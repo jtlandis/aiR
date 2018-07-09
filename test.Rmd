@@ -68,6 +68,18 @@ mylayers <- aiRnet(c(2,4,2))
 train <- train[,-4]
 loss.aiR <- aiRrun(data = train,var.classify = "group",aiRnet = mylayers, sample.size = .5,cycles = 300,batch.size = 60)
 ```
+
+```{r}
+set.seed(6778)
+system.time(loss.aiR <- aiRrun(data = train,var.classify = "group",aiRnet = mylayers, sample.size = .5,cycles = 300,batch.size = 60))
+set.seed(6778)
+system.time(loss.aiR <- aiRrun(data = train,var.classify = "group",aiRnet = mylayers, sample.size = .5,cycles = 300,batch.size = 60, test = TRUE))
+```
+
+
+
+
+
 ```{r}
 iteration <- as.numeric(rownames(loss.aiR$loss))
 ggplot(data = loss.aiR$loss,aes(x = iteration)) +
@@ -83,17 +95,17 @@ ggplot(data = loss.aiR$loss,aes(x = iteration)) +
 
 
 ```{r}
-v <- function(data,
-              factor,
-              aiRnet,
-              range.size = 10000) {
-  index <- index.o.coln(vec = factor, v.size = 1, v.name = "factor", name.col = colnames(data))
-  new <- aiRactivation(data = data[,-index], aiRnet = aiRnet, range.size = range.size)
-  classify_obj <- aiRclassify(data = new$data_model, factor = index, aiRnet = aiRnet)
-  gg <- ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = as.factor(classify_obj$classify), alpha = classify_obj$node.max))
-  return(gg)
-              }
+# v <- function(data,
+#               factor,
+#               aiRnet,
+#               range.size = 10000) {
+#   index <- index.o.coln(vec = factor, v.size = 1, v.name = "factor", name.col = colnames(data))
+#   new <- aiRactivation(data = data[,-index], aiRnet = aiRnet, range.size = range.size)
+#   classify_obj <- aiRclassify(data = new$data_model, factor = index, aiRnet = aiRnet)
+#   gg <- ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
+#   geom_point(aes(color = as.factor(classify_obj$classify), alpha = classify_obj$node.max))
+#   return(gg)
+#               }
 ```
 
 ```{r}

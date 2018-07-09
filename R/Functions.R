@@ -95,6 +95,7 @@ is.aiRnet <- function(x) inherits(x, "aiRnet")
 #' for no batches to be made.
 #' @param train.Factor Necessary when train.method set to "Factor". Assign as vector of length 2 in the following form
 #' c("column.index/name","factor.level"). Can assign only column name or index but first level is chosen in this case.
+#' @param test toggle if TRUE if test set loss and error should be reported as well. Default set to FALSE
 #' @param na.rm remove NAs, default set to TRUE. Function likely to fail with NAs
 #'
 #' @return data frame of loss and the aiRnet of the training values
