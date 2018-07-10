@@ -174,17 +174,17 @@ space.var <- aiRdevelop(data = train, var.classify = "group", aiRnet = mylayers,
 
 ```{r}
 #build > load all
-newaiR <- aiRnet(c(2,4,4,2))
+newaiR <- aiRnet(c(2,5,5,5,2))
 aiRnet1 <- newaiR
 aiRnet2 <- newaiR
 t <- length(aiRnet1)
-s <- 10
+s <- 100
 try.test <- train[sample(1:600,s),]
 
 
 
 loss <- aiRloss(data = aiRtransform(data = try.test[,-3], aiRnet = aiRnet1),class.levels = levels(train[,3]),classify = try.test[,3])
-additional.c <- apply(loss.prop^2,2,mean)/((apply(loss.prop,2,mean))^2)  # The proportion mean of squares to square of mean... (iteration of each row vs average each row)
+additional.c <- apply(loss$loss.prop^2,2,mean)/((apply(loss$loss.prop,2,mean))^2)  # The proportion mean of squares to square of mean... (iteration of each row vs average each row)
 
     for(i in 1:length(loss$row.loss)) { #for each input, start with loss
       aiRnet1 <- aiRrowdelta(loss.prop = loss$loss.prop[i,],
@@ -194,6 +194,10 @@ additional.c <- apply(loss.prop^2,2,mean)/((apply(loss.prop,2,mean))^2)  # The p
                             n = t)
     }
 
+for(i in 1:t) {
+  aiRnet1[[i]]$change.w <- aiRnet1[[i]]$change.w/s
+}
+
 mean.loss.prop <- apply(loss$loss.prop,2,mean)
 mean.row.loss <- mean(loss$row.loss)
 aiRnet2 <- aiRrowdelta2(loss.prop = loss$loss.prop, 
@@ -202,9 +206,7 @@ aiRnet2 <- aiRrowdelta2(loss.prop = loss$loss.prop,
                        aiRnet = aiRnet2,
                        n = t, additional.c = additional.c)
 
-for(i in 1:t) {
-  aiRnet1[[i]]$change.w <- aiRnet1[[i]]$change.w/s
-}
+
 for(i in t:1) {
   print(aiRnet1[[i]]$change.w/aiRnet2[[i]]$change.w)
 }
@@ -212,14 +214,15 @@ for(i in t:1) {
 ```
 
 ```{r}
-aiRrowdelta <- function(loss.prop,
+aiRrowdelta2 <- function(loss.prop,
                         row.loss,
                         total.loss,
                         aiRnet,
-                        n) {
+                        n,
+                        additional.c) {
+  
   g <- nrow(loss.prop)
   row.work <- apply(loss.prop,2,mean)
-  additional.c <- apply(loss.prop^2,2,mean)/((apply(loss.prop,2,mean))^2)
   row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
   for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
     w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
@@ -227,8 +230,8 @@ aiRrowdelta <- function(loss.prop,
     b <- abs(aiRnet[[j]]$bias)*row.work
     aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
     new.loss <- apply(w,1,mean)
-    #additional.c <- (sum(apply(loss.prop,2,mean)^2))*(sum(abs(apply(loss.prop^2,1,sum)))/(g*(sum(apply(loss$loss.prop^2,1,sum)*abs(apply(loss$loss.prop^2,1,sum)))))) 
-    row.work <- additional.c*sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+    #additional.c <- (sum(apply(loss.prop,2,mean)^2))*(sum(apply(loss.prop^2,1,sum))/(g*(sum(apply(loss$loss.prop^2,1,sum)^2))))
+    row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
   }
   return(aiRnet)
 }
