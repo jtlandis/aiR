@@ -174,7 +174,7 @@ space.var <- aiRdevelop(data = train, var.classify = "group", aiRnet = mylayers,
 
 ```{r}
 #build > load all
-#newaiR <- aiRnet(c(2,4,4,2))
+newaiR <- aiRnet(c(2,4,4,2))
 aiRnet1 <- newaiR
 aiRnet2 <- newaiR
 t <- length(aiRnet1)
