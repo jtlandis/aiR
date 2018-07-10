@@ -1,0 +1,13 @@
+Package: aiR
+Type: Package
+Title: Simple machine learning algorithm tools
+Version: 0.1.0
+Author: Justin Landis
+Maintainer: The package maintainer <jtlandis314@gmail.com>
+Description: This package allows people to explore a simple machine learning nueral network.
+    Users can generate random networks of specified sizes, implement training on the network, and attempt to visualize network's classification accuracy.
+    Currently only classification is supported. Would like to someday extend to regression and continuous approximations as well.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
