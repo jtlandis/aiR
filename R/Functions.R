@@ -595,6 +595,7 @@ aiRrowdelta <- function(loss.prop,
                         total.loss,
                         aiRnet,
                         n) {
+
   row.work <- loss.prop
   row.work <- sqrt(length(row.work))*row.work*(abs(row.work/(row.loss)))*(row.loss/total.loss)
   for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
@@ -603,7 +604,7 @@ aiRrowdelta <- function(loss.prop,
     b <- abs(aiRnet[[j]]$bias)*row.work
     aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
     new.loss <- apply(w,1,mean)
-    row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))*(row.loss/total.loss)
+    row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
   }
   return(aiRnet)
 }
