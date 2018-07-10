@@ -215,7 +215,7 @@ aiRrowdelta2 <- function(loss.prop,
     aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
     new.loss <- apply(w,1,mean)
     #row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))*(total.loss/((sum(apply(loss.prop,1,sum)*abs(row.loss)))))*(1/(g))
-    additional.c <- ((apply(loss.prop,2,mean)^2))*(sum(abs(apply(loss.prop^2,1,sum)))/(g^3*(sum(apply(loss$loss.prop^2,1,sum)*abs(apply(loss$loss.prop^2,1,sum)))))) 
+    additional.c <- (sum(apply(loss.prop,2,mean)^2))*(sum(abs(apply(loss.prop^2,1,sum)))/(g*(sum(apply(loss$loss.prop^2,1,sum)*abs(apply(loss$loss.prop^2,1,sum)))))) 
     #(sum(w^2)/(g^2))*(total.loss/(sum(apply(loss.prop,1,sum)*abs(apply(loss.prop,1,sum)))))
     row.work <- additional.c*sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
   }
