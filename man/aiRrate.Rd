@@ -4,7 +4,7 @@
 \alias{aiRrate}
 \title{aiRrate}
 \usage{
-aiRrate(data, factor, aiRnet, report.class = FALSE)
+aiRrate(data, factor, aiRnet, report.class = FALSE, warning = TRUE)
 }
 \arguments{
 \item{data}{data of input values}
@@ -15,9 +15,12 @@ levels presented in original data.}
 \item{aiRnet}{aiRnet object}
 
 \item{report.class}{report results from aiRclassify, Default set to FALSE}
+
+\item{warning}{Suppress warning from aiRclassify that multiple nodes are activated. 
+Default set to TRUE. TRUE: allow warning. FALSE: Suppress warning}
 }
 \value{
-error rate of aiRnet on data
+error rate of aiRnet on data and how many activated non uniquely.
 }
 \description{
 reports error rate of network

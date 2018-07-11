@@ -4,7 +4,7 @@
 \alias{aiRclassify}
 \title{aiRclassify}
 \usage{
-aiRclassify(data, factor, aiRnet)
+aiRclassify(data, factor, aiRnet, warning = TRUE)
 }
 \arguments{
 \item{data}{data of input values}
@@ -13,6 +13,9 @@ aiRclassify(data, factor, aiRnet)
 levels presented in original data.}
 
 \item{aiRnet}{aiRnet object}
+
+\item{warning}{Suppress warning from aiRclassify that multiple nodes are activated. 
+Default set to TRUE. TRUE: allow warning. FALSE: Suppress warning}
 }
 \value{
 returns a list of classification values for each
