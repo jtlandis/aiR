@@ -16,7 +16,7 @@ levels presented in original data.}
 
 \item{report.class}{report results from aiRclassify, Default set to FALSE}
 
-\item{warning}{Suppress warning from aiRclassify that multiple nodes are activated. 
+\item{warning}{Suppress warning from aiRclassify that multiple nodes are activated.
 Default set to TRUE. TRUE: allow warning. FALSE: Suppress warning}
 }
 \value{

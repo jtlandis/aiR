@@ -300,19 +300,19 @@ browser()
     loss$train.error[k] <- train.rate$MeanError
     loss$train.fails[k] <- train.rate$failed.instances
     loss$train[k] <- train.loss$total.loss
-    for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
-      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop[i,],  #Does average of all observations to speed up computation time.
+    #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
+      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,  #Does average of all observations to speed up computation time.
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
                             n = n)
-    }
+    #}
     last.loss <- aiRnet
     aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
   }
 
   if(data.return) {
     aiR <- list(loss, aiRnet, data.train.save)
-    names(aiR) <- c("loss","aiRnet", "training.data")    
+    names(aiR) <- c("loss","aiRnet", "training.data")
   } else {
     aiR <- list(loss, aiRnet)
     names(aiR) <- c("loss","aiRnet")
@@ -386,7 +386,7 @@ aiRrun_test <- function(data,
     } else {
       stop("batch.size must be a numeric integer or left on default \"all\".")
     }
-    
+
     if(k==1){
       warning <- TRUE
     } else if((loss$train.error[k-1]!=0)) {
@@ -428,7 +428,7 @@ aiRrun_test <- function(data,
 
   if(data.return) {
     aiR <- list(loss, aiRnet, data.train.save, data.test)
-    names(aiR) <- c("loss","aiRnet", "training.data", "test.data")    
+    names(aiR) <- c("loss","aiRnet", "training.data", "test.data")
   } else {
     aiR <- list(loss, aiRnet)
     names(aiR) <- c("loss","aiRnet")
@@ -503,7 +503,7 @@ aiRloss <- function(data, class.levels, classify) {
 #' levels presented in original data.
 #' @param aiRnet aiRnet object
 #' @param report.class report results from aiRclassify, Default set to FALSE
-#' @param warning Suppress warning from aiRclassify that multiple nodes are activated. 
+#' @param warning Suppress warning from aiRclassify that multiple nodes are activated.
 #' Default set to TRUE. TRUE: allow warning. FALSE: Suppress warning
 #'
 #' @return error rate of aiRnet on data and how many activated non uniquely.
@@ -541,7 +541,7 @@ aiRrate <- function(data, factor, aiRnet, report.class = FALSE, warning = TRUE) 
 #' @param factor character vector of factors to classify. levels must be in same order as
 #' levels presented in original data.
 #' @param aiRnet aiRnet object
-#' @param warning Suppress warning from aiRclassify that multiple nodes are activated. 
+#' @param warning Suppress warning from aiRclassify that multiple nodes are activated.
 #' Default set to TRUE. TRUE: allow warning. FALSE: Suppress warning
 #'
 #' @return returns a list of classification values for each
@@ -641,10 +641,10 @@ aiRrowdelta <- function(loss.prop,
                         aiRnet,
                         n) {
   #g <- nrow(loss.prop)
-  #row.work <- apply(loss.prop,2,mean)
-  #additional.c <- apply(loss.prop^2,2,mean)/((apply(loss.prop,2,mean))^2)
-  #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
-  row.work <- sqrt(length(loss.prop))*loss.prop*(abs(loss.prop/(total.loss)))
+  row.work <- apply(loss.prop,2,mean)
+  additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
+  row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
+  #row.work <- sqrt(length(loss.prop))*loss.prop*(abs(loss.prop/(total.loss)))
   for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
     w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
     aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w

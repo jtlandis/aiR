@@ -14,7 +14,7 @@ levels presented in original data.}
 
 \item{aiRnet}{aiRnet object}
 
-\item{warning}{Suppress warning from aiRclassify that multiple nodes are activated. 
+\item{warning}{Suppress warning from aiRclassify that multiple nodes are activated.
 Default set to TRUE. TRUE: allow warning. FALSE: Suppress warning}
 }
 \value{
