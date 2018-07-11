@@ -300,12 +300,12 @@ browser()
     loss$train.error[k] <- train.rate$MeanError
     loss$train.fails[k] <- train.rate$failed.instances
     loss$train[k] <- train.loss$total.loss
-    #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
-      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,  #Does average of all observations to speed up computation time.
+    for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
+      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop[i,],  #Does average of all observations to speed up computation time.
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
                             n = n)
-    #}
+    }
     last.loss <- aiRnet
     aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
   }
@@ -641,9 +641,9 @@ aiRrowdelta <- function(loss.prop,
                         aiRnet,
                         n) {
   #g <- nrow(loss.prop)
-  row.work <- apply(loss.prop,2,mean)
-  additional.c <- apply(loss.prop^2,2,mean)/((apply(loss.prop,2,mean))^2)
-  row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
+  #row.work <- apply(loss.prop,2,mean)
+  #additional.c <- apply(loss.prop^2,2,mean)/((apply(loss.prop,2,mean))^2)
+  row.work <- sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
   for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
     w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
     aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
