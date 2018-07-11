@@ -381,13 +381,13 @@ aiRrun_test <- function(data,
     loss$test.error[k] <- aiRrate(data = data.test,
                                   factor = index,
                                   aiRnet = aiRnet, report.class = F)
-    for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
+    #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
       aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop[i,],
                             row.loss = train.loss$row.loss[i],
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
                             n = n)
-    }
+    #}
     last.loss <- aiRnet
     aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
   }
