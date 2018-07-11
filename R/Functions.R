@@ -297,7 +297,7 @@ browser()
                           aiRnet = aiRnet,
                           report.class = F,
                           warning = warning)
-    loss$train.error[k] <- train.rate$rate
+    loss$train.error[k] <- train.rate$MeanError
     loss$train.fails[k] <- train.rate$failed.instances
     loss$train[k] <- train.loss$total.loss
     #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
@@ -406,7 +406,7 @@ aiRrun_test <- function(data,
                           aiRnet = aiRnet,
                           report.class = F,
                           warning = warning)
-    loss$train.error[k] <- train.rate$rate
+    loss$train.error[k] <- train.rate$MeanError
     loss$train.fails[k] <- train.rate$failed.instances
     loss$test[k] <- test.loss$total.loss
     test.rate <- aiRrate(data = data.test,
@@ -414,7 +414,7 @@ aiRrun_test <- function(data,
                           aiRnet = aiRnet,
                          report.class = F,
                          warning = warning)
-    loss$test.error[k] <- test.rate$rate
+    loss$test.error[k] <- test.rate$MeanError
     loss$test.fails[k] <- test.rate$failed.instances
     #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
       aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,
