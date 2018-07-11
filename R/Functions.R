@@ -285,8 +285,7 @@ aiRrun_train <- function(data,
                                    aiRnet = aiRnet, report.class = F)
     loss$train[k] <- train.loss$total.loss
     #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
-      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop[i,],  #Does average of all observations to speed up computation time.
-                            row.loss = train.loss$row.loss[i],
+      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,  #Does average of all observations to speed up computation time.
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
                             n = n)
@@ -382,8 +381,7 @@ aiRrun_test <- function(data,
                                   factor = index,
                                   aiRnet = aiRnet, report.class = F)
     #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
-      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop[i,],
-                            row.loss = train.loss$row.loss[i],
+      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
                             n = n)
@@ -584,14 +582,12 @@ mat.opperation <- function(x,y, opperation){
 #' @description back Propagation function
 #'
 #' @param loss.prop generated from aiRloss
-#' @param row.loss generated from aiRloss
 #' @param total.loss generated from aiRloss
 #' @param aiRnet aiRnet object
 #' @param n length of aiRnet
 #'
 #' @return new aiRnet object
 aiRrowdelta <- function(loss.prop,
-                        row.loss,
                         total.loss,
                         aiRnet,
                         n) {

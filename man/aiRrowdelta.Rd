@@ -4,12 +4,10 @@
 \alias{aiRrowdelta}
 \title{aiRrowdelta}
 \usage{
-aiRrowdelta(loss.prop, row.loss, total.loss, aiRnet, n)
+aiRrowdelta(loss.prop, total.loss, aiRnet, n)
 }
 \arguments{
 \item{loss.prop}{generated from aiRloss}
-
-\item{row.loss}{generated from aiRloss}
 
 \item{total.loss}{generated from aiRloss}
 
