@@ -6,7 +6,7 @@
 \usage{
 aiRrun(data, var.classify, aiRnet, cycles = 100, train.method = "Sample",
   sample.size = 0.5, batch.size = "all", train.Factor = NULL,
-  test = FALSE, na.rm = TRUE)
+  test = FALSE, na.rm = TRUE, data.return = FALSE)
 }
 \arguments{
 \item{data}{Data frame that contains all named columns needed}
@@ -33,7 +33,9 @@ c("column.index/name","factor.level"). Can assign only column name or index but 
 \item{test}{toggle if TRUE if test set loss and error should be reported as well. Default set to FALSE}
 
 \item{na.rm}{remove NAs, default set to TRUE. Function likely to fail with NAs}
+
+\item{data.return}{logical determines if data should be returned to the user. Default set to FALSE}
 }
 \value{
-data frame of loss and the aiRnet of the training values
+data frame of loss and the aiRnet of the training values. data set used is optional
 }

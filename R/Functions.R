@@ -97,8 +97,9 @@ is.aiRnet <- function(x) inherits(x, "aiRnet")
 #' c("column.index/name","factor.level"). Can assign only column name or index but first level is chosen in this case.
 #' @param test toggle if TRUE if test set loss and error should be reported as well. Default set to FALSE
 #' @param na.rm remove NAs, default set to TRUE. Function likely to fail with NAs
+#' @param data.return logical determines if data should be returned to the user. Default set to FALSE
 #'
-#' @return data frame of loss and the aiRnet of the training values
+#' @return data frame of loss and the aiRnet of the training values. data set used is optional
 #'
 #' @export
 aiRrun <- function(data,
@@ -110,7 +111,8 @@ aiRrun <- function(data,
                    batch.size="all",
                    train.Factor = NULL,
                    test = FALSE,
-                   na.rm=TRUE) {
+                   na.rm=TRUE,
+                   data.return = FALSE) {
   if(!is.aiRnet(aiRnet)){
     stop("aiRnet must be of class \"aiRnet\"")
   }
@@ -123,6 +125,9 @@ aiRrun <- function(data,
   }
   if(!is.element(test, c(TRUE,FALSE))) {
     stop("test must be either TRUE or FALSE")
+  }
+  if(!is.element(data.return, c(TRUE,FALSE))) {
+    stop("data.return must be either TRUE or FALSE")
   }
   if(!is.factor(data[,index])) {
     stop("var.classify must be assigned a factor vector as a classification variable.")
@@ -230,6 +235,7 @@ aiRsubset <- function(x, train.method, sample.size, train.Factor = NULL) {
 #' @param cycles Number of cycles done to correct.
 #' @param batch.size Number indicating how many rows to make batches from training sample. Default set to "all"
 #' for no batches to be made.
+#' @param data.return logical determines if data should be returned to the user. Default set to FALSE
 #'
 #' @return loss, aiRnet, traing.data
 aiRrun_train <- function(data,
@@ -239,7 +245,8 @@ aiRrun_train <- function(data,
                          sample.rows,
                          aiRnet,
                          cycles = 100,
-                         batch.size="all") {
+                         batch.size = "all",
+                         data.return = FALSE) {
   classify <- data[,index]
   classify.train <- classify[sample.rows]
 
@@ -255,7 +262,7 @@ aiRrun_train <- function(data,
     }
     nbatch <- floor(nrow(data.train)/(batch.size))
   }
-
+browser()
   for(k in 1:cycles) {
     if(is.numeric(batch.size)) {
       if(k%%nbatch==1) {
@@ -294,8 +301,13 @@ aiRrun_train <- function(data,
     aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
   }
 
-  aiR <- list(loss, aiRnet, data.train.save)
-  names(aiR) <- c("loss","aiRnet", "training.data")
+  if(data.return) {
+    aiR <- list(loss, aiRnet, data.train.save)
+    names(aiR) <- c("loss","aiRnet", "training.data")    
+  } else {
+    aiR <- list(loss, aiRnet)
+    names(aiR) <- c("loss","aiRnet")
+  }
   class(aiR$aiRnet) <- "aiRnet"
 
   return(aiR)
@@ -316,6 +328,7 @@ aiRrun_train <- function(data,
 #' @param cycles Number of cycles done to correct.
 #' @param batch.size Number indicating how many rows to make batches from training sample. Default set to "all"
 #' for no batches to be made.
+#' @param data.return logical determines if data should be returned to the user. Default set to FALSE
 #'
 #' @return loss, aiRnet, traing.data and test.data
 aiRrun_test <- function(data,
@@ -325,7 +338,8 @@ aiRrun_test <- function(data,
                         sample.rows,
                         aiRnet,
                         cycles = 100,
-                        batch.size="all") {
+                        batch.size = "all",
+                        data.return = FALSE) {
   classify <- data[,index]
   classify.train <- classify[sample.rows]
   classify.test <- classify[!sample.rows]
@@ -390,8 +404,13 @@ aiRrun_test <- function(data,
     aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
   }
 
-  aiR <- list(loss, aiRnet, data.train.save, data.test)
-  names(aiR) <- c("loss","aiRnet", "training.data","test,data")
+  if(data.return) {
+    aiR <- list(loss, aiRnet, data.train.save, data.test)
+    names(aiR) <- c("loss","aiRnet", "training.data", "test.data")    
+  } else {
+    aiR <- list(loss, aiRnet)
+    names(aiR) <- c("loss","aiRnet")
+  }
   class(aiR$aiRnet) <- "aiRnet"
 
   return(aiR)
@@ -602,7 +621,7 @@ aiRrowdelta <- function(loss.prop,
     aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
     new.loss <- apply(w,1,mean)
     #additional.c <- (sum(apply(loss.prop,2,mean)^2))*(sum(abs(apply(loss.prop^2,1,sum)))/(g*(sum(apply(loss$loss.prop^2,1,sum)*abs(apply(loss$loss.prop^2,1,sum))))))
-    row.work <- additional.c*sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+    row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
   }
   return(aiRnet)
 }

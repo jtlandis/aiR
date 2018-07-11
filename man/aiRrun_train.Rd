@@ -5,7 +5,7 @@
 \title{aiRrun_train}
 \usage{
 aiRrun_train(data, index, n, class.levels, sample.rows, aiRnet, cycles = 100,
-  batch.size = "all")
+  batch.size = "all", data.return = FALSE)
 }
 \arguments{
 \item{data}{Data frame that contains all named columns needed}
@@ -24,6 +24,8 @@ aiRrun_train(data, index, n, class.levels, sample.rows, aiRnet, cycles = 100,
 
 \item{batch.size}{Number indicating how many rows to make batches from training sample. Default set to "all"
 for no batches to be made.}
+
+\item{data.return}{logical determines if data should be returned to the user. Default set to FALSE}
 }
 \value{
 loss, aiRnet, traing.data
