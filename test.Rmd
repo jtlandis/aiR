@@ -54,7 +54,7 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 
 ```{r}
 
-mylayers <- aiRnet(c(2,4,2))
+mylayers <- aiRnet(c(2,4,4,2))
 # layer1 <- aiRlayer(2,4)
 # layer2 <- aiRlayer(4,2)
 # mylayers <- list(layer1, layer2)

@@ -262,7 +262,7 @@ aiRrun_train <- function(data,
     }
     nbatch <- floor(nrow(data.train)/(batch.size))
   }
-browser()
+
   for(k in 1:cycles) {
     if(is.numeric(batch.size)) {
       if(k%%nbatch==1) {
