@@ -10,6 +10,8 @@ aiRtransform(data, aiRnet, n = NULL)
 \item{data}{data of input values}
 
 \item{aiRnet}{aiRnet object}
+
+\item{n}{Which layer to transform to.}
 }
 \value{
 returns aiRnet output of data

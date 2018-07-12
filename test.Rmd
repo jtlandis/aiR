@@ -67,7 +67,7 @@ mylayers <- aiRnet(c(2,4,4,2))
 #                         group = c("g2","g2","g2","g1","g1","g1"),
 #                         z = c(.1,.2,.4,.5,.7,-.8)))
 train <- train[,-4]
-loss.aiR <- aiRrun(data = train,var.classify = "group",aiRnet = mylayers, sample.size = .5,cycles = 300,batch.size = 60)
+loss.aiR <- aiRrun(data = train,var.classify = "group",aiRnet = mylayers, sample.size = 1,cycles = 300,batch.size = 60)
 
 ```
 
@@ -203,7 +203,7 @@ aiRnet2 <- aiRrowdelta2(loss.prop = loss$loss.prop,
                        row.loss = loss$row.loss,
                        total.loss = loss$total.loss,
                        aiRnet = aiRnet2,
-                       n = t, data = try.test)
+                       n = t, data = try.test, index = 3)
 
 
 for(i in t:1) {
@@ -221,7 +221,7 @@ aiRrowdelta2 <- function(loss.prop,
                         data,
                         index) {
   
-  aiRnet.work <- aiRnet
+
   #g <- nrow(loss.prop)
   row.work <- apply(loss.prop,2,mean)
   additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
@@ -234,9 +234,7 @@ aiRrowdelta2 <- function(loss.prop,
     aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
     new.loss <- apply(w,1,mean)
     if(j!=1) {
-      aiRnet.work[[j]]$weights <- aiRnet.work[[j]]$weights + w
-      aiRnet.work[[j]]$bias <- aiRnet.work[[j]]$bias + b
-      data.work <- aiRtransform(data = data[,index], aiRnet = aiRnet.work, n = j-1)
+      data.work <- aiRtransform(data = data[,-index], aiRnet = aiRnet, n = j-1)
       new.loss <- sqrt(length(new.loss))*new.loss*(abs(new.loss))/(sum(abs(new.loss)))
       loss.work <- mat.opperation(x = as.matrix(data.work), y = new.loss, opperation = "*")
       new.loss <- apply(loss.work, 2, mean)

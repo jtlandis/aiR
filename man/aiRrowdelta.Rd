@@ -4,7 +4,7 @@
 \alias{aiRrowdelta}
 \title{aiRrowdelta}
 \usage{
-aiRrowdelta(loss.prop, total.loss, aiRnet, n, data, index)
+aiRrowdelta(loss.prop, total.loss, aiRnet, n)
 }
 \arguments{
 \item{loss.prop}{generated from aiRloss}
@@ -14,10 +14,6 @@ aiRrowdelta(loss.prop, total.loss, aiRnet, n, data, index)
 \item{aiRnet}{aiRnet object}
 
 \item{n}{length of aiRnet}
-
-\item{data}{data used}
-
-\item{index}{index of class vector}
 }
 \value{
 new aiRnet object
