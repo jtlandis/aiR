@@ -299,14 +299,30 @@ aiRrun_train <- function(data,
                           aiRnet = aiRnet,
                           report.class = F,
                           warning = warning)
-    if(k!=1&&train.loss$train[k]>train.loss$train[k-1]){
-      aiRnet <- last.loss
-      attempt <- attempt + 1
-      consec.attempt <- consec.attempt + 1
-      if(consec.attempt==(2*nbatch)) {
-        warning(paste(2*nbatch, " consecutive attempts were made. Local minimum likely approached. Could not complete ",cycles," cycles. ",sep = ""))
-        loss <- na.exclude(loss)
-        break()
+    if(k!=1){
+      if(train.loss$train[k]>train.loss$train[k-1]) {
+        aiRnet <- last.loss
+        attempt <- attempt + 1
+        consec.attempt <- consec.attempt + 1
+        if(consec.attempt==(2*nbatch)) {
+          warning(paste(2*nbatch, " consecutive attempts were made. Local minimum likely approached. Could not complete ",cycles," cycles. ",sep = ""))
+          loss <- na.exclude(loss)
+          break()
+        }
+      } else {
+        consec.attempt <- 0
+        loss$train.error[k] <- train.rate$MeanError
+        loss$train.fails[k] <- train.rate$failed.instances
+        loss$train[k] <- train.loss$total.loss
+        last.loss <- aiRnet
+        #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
+        aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,  #Does average of all observations to speed up computation time.
+                            total.loss = train.loss$total.loss,
+                            aiRnet = aiRnet,
+                            n = n)
+      #}
+        aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
+        k <- k + 1
       }
     } else {
       consec.attempt <- 0
@@ -417,14 +433,43 @@ aiRrun_test <- function(data,
                                              aiRnet = aiRnet),
                          class.levels = class.levels,
                          classify = classify.test)
-    if(k!=1&&train.loss$train[k]>train.loss$train[k-1]){
-      aiRnet <- last.loss
-      attempt <- attempt + 1
-      consec.attempt <- consec.attempt + 1
-      if(consec.attempt==(2*nbatch)) {
-        warning(paste(2*nbatch, " consecutive attempts were made. Local minimum likely approached. Could not complete ",cycles," cycles. ",sep = ""))
-        loss <- na.exclude(loss)
-        break()
+    if(k!=1) {
+      if(train.loss$train[k]>train.loss$train[k-1]){
+        aiRnet <- last.loss
+        attempt <- attempt + 1
+        consec.attempt <- consec.attempt + 1
+        if(consec.attempt==(2*nbatch)) {
+          warning(paste(2*nbatch, " consecutive attempts were made. Local minimum likely approached. Could not complete ",cycles," cycles. ",sep = ""))
+          loss <- na.exclude(loss)
+          break()
+        }
+      } else {
+        consec.attempt <- 0
+        loss$train[k] <- train.loss$total.loss
+        train.rate <- aiRrate(data = data.train,
+                              factor = index,
+                              aiRnet = aiRnet,
+                              report.class = F,
+                              warning = warning)
+        loss$train.error[k] <- train.rate$MeanError
+        loss$train.fails[k] <- train.rate$failed.instances
+        loss$test[k] <- test.loss$total.loss
+        test.rate <- aiRrate(data = data.test,
+                             factor = index,
+                             aiRnet = aiRnet,
+                             report.class = F,
+                             warning = warning)
+        loss$test.error[k] <- test.rate$MeanError
+        loss$test.fails[k] <- test.rate$failed.instances
+        last.loss <- aiRnet
+        #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
+        aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,
+                              total.loss = train.loss$total.loss,
+                              aiRnet = aiRnet,
+                              n = n)
+        #}
+        aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
+        k <- k + 1
       }
     } else {
       consec.attempt <- 0
