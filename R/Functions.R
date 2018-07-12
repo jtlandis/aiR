@@ -731,7 +731,7 @@ aiRrowdelta <- function(loss.prop,
                         data,
                         index) {
 
-  aiRnet.work <- aiRnet
+
   #g <- nrow(loss.prop)
   row.work <- apply(loss.prop,2,mean)
   additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
@@ -744,9 +744,7 @@ aiRrowdelta <- function(loss.prop,
     aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
     new.loss <- apply(w,1,mean)
     if(j!=1) {
-      aiRnet.work[[j]]$weights <- aiRnet.work[[j]]$weights + w
-      aiRnet.work[[j]]$bias <- aiRnet.work[[j]]$bias + b
-      data.work <- aiRtransform(data = data[,index], aiRnet = aiRnet.work, n = j-1)
+      data.work <- aiRtransform(data = data[,-index], aiRnet = aiRnet, n = j-1)
       new.loss <- sqrt(length(new.loss))*new.loss*(abs(new.loss))/(sum(abs(new.loss)))
       loss.work <- mat.opperation(x = as.matrix(data.work), y = new.loss, opperation = "*")
       new.loss <- apply(loss.work, 2, mean)
