@@ -262,18 +262,20 @@ aiRrun_train <- function(data,
     }
     nbatch <- floor(nrow(data.train)/(batch.size))
   }
-
-  for(k in 1:cycles) {
+  k <- 1
+  attempt <- 0
+  consec.attempt <- 0
+  while(k <= cycles) {
     if(is.numeric(batch.size)) {
-      if(k%%nbatch==1) {
+      if((k+attempt)%%nbatch==1) {
         batches <- aiRbatch(data = data.train.save, batch.size = batch.size)
-        data.train <- batches[[k%%nbatch]]
+        data.train <- batches[[1]]
         classify.train <- data.train[,index]
       } else {
-        if(k%%nbatch==0) {
+        if((k+attempt)%%nbatch==0) {
           data.train <- batches[[nbatch]]
         } else {
-          data.train <- batches[[k%%nbatch]]
+          data.train <- batches[[(k+attempt)%%nbatch]]
         }
         classify.train <- data.train[,index]
       }
@@ -289,7 +291,7 @@ aiRrun_train <- function(data,
                           classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
     if(k==1){
       warning <- TRUE
-    } else if((loss$train.error[k-1]!=0)) {
+    } else if((loss$train.fails[k-1]!=0)) {
       warning <- FALSE
     }
     train.rate <- aiRrate(data = data.train,
@@ -297,17 +299,30 @@ aiRrun_train <- function(data,
                           aiRnet = aiRnet,
                           report.class = F,
                           warning = warning)
-    loss$train.error[k] <- train.rate$MeanError
-    loss$train.fails[k] <- train.rate$failed.instances
-    loss$train[k] <- train.loss$total.loss
-    #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
+    if(k!=1&&train.loss$train[k]>train.loss$train[k-1]){
+      aiRnet <- last.loss
+      attempt <- attempt + 1
+      consec.attempt <- consec.attempt + 1
+      if(consec.attempt==(2*nbatch)) {
+        warning(paste(2*nbatch, " consecutive attempts were made. Local minimum likely approached. Could not complete ",cycles," cycles. ",sep = ""))
+        loss <- na.exclude(loss)
+        break()
+      }
+    } else {
+      consec.attempt <- 0
+      loss$train.error[k] <- train.rate$MeanError
+      loss$train.fails[k] <- train.rate$failed.instances
+      loss$train[k] <- train.loss$total.loss
+      last.loss <- aiRnet
+      #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
       aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,  #Does average of all observations to speed up computation time.
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
                             n = n)
-    #}
-    last.loss <- aiRnet
-    aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
+      #}
+      aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
+      k <- k + 1
+    }
   }
 
   if(data.return) {
@@ -366,18 +381,20 @@ aiRrun_test <- function(data,
     }
     nbatch <- floor(nrow(data.train)/(batch.size))
   }
-
-  for(k in 1:cycles) {
+  k <- 1
+  attempt <- 0
+  consec.attempt <- 0
+  while(k <= cycles) {
     if(is.numeric(batch.size)) {
-      if(k%%nbatch==1) {
+      if((k+attempt)%%nbatch==1) {
         batches <- aiRbatch(data = data.train.save, batch.size = batch.size)
-        data.train <- batches[[k%%nbatch]]
+        data.train <- batches[[1]]
         classify.train <- data.train[,index]
       } else {
-        if(k%%nbatch==0) {
+        if((k+attempt)%%nbatch==0) {
           data.train <- batches[[nbatch]]
         } else {
-          data.train <- batches[[k%%nbatch]]
+          data.train <- batches[[(k+attempt)%%nbatch]]
         }
         classify.train <- data.train[,index]
       }
@@ -389,7 +406,7 @@ aiRrun_test <- function(data,
 
     if(k==1){
       warning <- TRUE
-    } else if((loss$train.error[k-1]!=0)) {
+    } else if((loss$train.fails[k-1]!=0)) {
       warning <- FALSE
     }
     train.loss <- aiRloss(data = aiRtransform(data = data.train[,-index],
@@ -400,30 +417,43 @@ aiRrun_test <- function(data,
                                              aiRnet = aiRnet),
                          class.levels = class.levels,
                          classify = classify.test)
-    loss$train[k] <- train.loss$total.loss
-    train.rate <- aiRrate(data = data.train,
-                          factor = index,
-                          aiRnet = aiRnet,
-                          report.class = F,
-                          warning = warning)
-    loss$train.error[k] <- train.rate$MeanError
-    loss$train.fails[k] <- train.rate$failed.instances
-    loss$test[k] <- test.loss$total.loss
-    test.rate <- aiRrate(data = data.test,
-                          factor = index,
-                          aiRnet = aiRnet,
-                         report.class = F,
-                         warning = warning)
-    loss$test.error[k] <- test.rate$MeanError
-    loss$test.fails[k] <- test.rate$failed.instances
-    #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
+    if(k!=1&&train.loss$train[k]>train.loss$train[k-1]){
+      aiRnet <- last.loss
+      attempt <- attempt + 1
+      consec.attempt <- consec.attempt + 1
+      if(consec.attempt==(2*nbatch)) {
+        warning(paste(2*nbatch, " consecutive attempts were made. Local minimum likely approached. Could not complete ",cycles," cycles. ",sep = ""))
+        loss <- na.exclude(loss)
+        break()
+      }
+    } else {
+      consec.attempt <- 0
+      loss$train[k] <- train.loss$total.loss
+      train.rate <- aiRrate(data = data.train,
+                            factor = index,
+                            aiRnet = aiRnet,
+                            report.class = F,
+                            warning = warning)
+      loss$train.error[k] <- train.rate$MeanError
+      loss$train.fails[k] <- train.rate$failed.instances
+      loss$test[k] <- test.loss$total.loss
+      test.rate <- aiRrate(data = data.test,
+                           factor = index,
+                           aiRnet = aiRnet,
+                           report.class = F,
+                           warning = warning)
+      loss$test.error[k] <- test.rate$MeanError
+      loss$test.fails[k] <- test.rate$failed.instances
+      last.loss <- aiRnet
+      #for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
       aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
                             n = n)
-    #}
-    last.loss <- aiRnet
-    aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
+      #}
+      aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
+      k <- k + 1
+    }
   }
 
   if(data.return) {
