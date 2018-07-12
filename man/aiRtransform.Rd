@@ -4,7 +4,7 @@
 \alias{aiRtransform}
 \title{aiRtransform}
 \usage{
-aiRtransform(data, aiRnet)
+aiRtransform(data, aiRnet, n = NULL)
 }
 \arguments{
 \item{data}{data of input values}

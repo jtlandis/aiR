@@ -319,7 +319,9 @@ aiRrun_train <- function(data,
         aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,  #Does average of all observations to speed up computation time.
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
-                            n = n)
+                            n = n,
+                            data = data.train,
+                            index = index)
       #}
         aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
         k <- k + 1
@@ -334,7 +336,9 @@ aiRrun_train <- function(data,
       aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,  #Does average of all observations to speed up computation time.
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
-                            n = n)
+                            n = n,
+                            data = data.train,
+                            index = index)
       #}
       aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
       k <- k + 1
@@ -466,7 +470,9 @@ aiRrun_test <- function(data,
         aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,
                               total.loss = train.loss$total.loss,
                               aiRnet = aiRnet,
-                              n = n)
+                              n = n,
+                              data = data.train,
+                              index = index)
         #}
         aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
         k <- k + 1
@@ -494,7 +500,9 @@ aiRrun_test <- function(data,
       aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
-                            n = n)
+                            n = n,
+                            data = data.train,
+                            index = index)
       #}
       aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
       k <- k + 1
@@ -654,11 +662,14 @@ aiRclassify <- function(data, factor, aiRnet, warning = TRUE) {
 #' @return returns aiRnet output of data
 #'
 #' @export
-aiRtransform <- function(data, aiRnet) {
+aiRtransform <- function(data, aiRnet, n = NULL) {
   if(!is.aiRnet(aiRnet)){
     stop("aiRnet must be of class \"aiRnet\"")
   }
-  for(i in 1:length(aiRnet)) {   #Transform data through aiRnet
+  if(is.null(n)) {
+    n <- length(aiRnet)
+  }
+  for(i in 1:n) {   #Transform data through aiRnet
     data <- as.matrix(data )%*%aiRnet[[i]]$weights
     data <- mat.opperation(x = data, y = aiRnet[[i]]$bias, opperation = "+")
     data <- sigmoid(data)
@@ -709,25 +720,41 @@ mat.opperation <- function(x,y, opperation){
 #' @param total.loss generated from aiRloss
 #' @param aiRnet aiRnet object
 #' @param n length of aiRnet
+#' @param data data used
+#' @param index index of class vector
 #'
 #' @return new aiRnet object
 aiRrowdelta <- function(loss.prop,
                         total.loss,
                         aiRnet,
-                        n) {
+                        n,
+                        data,
+                        index) {
+
+  aiRnet.work <- aiRnet
   #g <- nrow(loss.prop)
   row.work <- apply(loss.prop,2,mean)
   additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
+  #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
   row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
-  #row.work <- sqrt(length(loss.prop))*loss.prop*(abs(loss.prop/(total.loss)))
   for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
     w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
     aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
     b <- abs(aiRnet[[j]]$bias)*row.work
     aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
     new.loss <- apply(w,1,mean)
-    #additional.c <- (sum(apply(loss.prop,2,mean)^2))*(sum(abs(apply(loss.prop^2,1,sum)))/(g*(sum(apply(loss$loss.prop^2,1,sum)*abs(apply(loss$loss.prop^2,1,sum))))))
-    row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+    if(j!=1) {
+      aiRnet.work[[j]]$weights <- aiRnet.work[[j]]$weights + w
+      aiRnet.work[[j]]$bias <- aiRnet.work[[j]]$bias + b
+      data.work <- aiRtransform(data = data[,index], aiRnet = aiRnet.work, n = j-1)
+      new.loss <- sqrt(length(new.loss))*new.loss*(abs(new.loss))/(sum(abs(new.loss)))
+      loss.work <- mat.opperation(x = as.matrix(data.work), y = new.loss, opperation = "*")
+      new.loss <- apply(loss.work, 2, mean)
+      additional.c <- apply(loss.work*abs(loss.work),2,mean)/((apply(loss.work,2,mean)*abs(apply(loss.work,2,mean))))
+      #additional.c <- apply(as.data.frame(w)*abs(as.data.frame(w)),1,mean)/((apply(as.data.frame(w),1,mean)*abs(apply(as.data.frame(w),1,mean))))
+      row.work <- additional.c*sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+    }
+
   }
   return(aiRnet)
 }
