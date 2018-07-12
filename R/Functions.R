@@ -658,6 +658,7 @@ aiRclassify <- function(data, factor, aiRnet, warning = TRUE) {
 #'
 #' @param data data of input values
 #' @param aiRnet aiRnet object
+#' @param n Which layer to transform to.
 #'
 #' @return returns aiRnet output of data
 #'
