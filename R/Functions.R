@@ -300,7 +300,7 @@ aiRrun_train <- function(data,
                           report.class = F,
                           warning = warning)
     if(k!=1){
-      if(train.loss$total.loss[k]>loss$train[k-1]) {
+      if(train.loss$total.loss>loss$train[k-1]) {
         aiRnet <- last.loss
         attempt <- attempt + 1
         consec.attempt <- consec.attempt + 1
