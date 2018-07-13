@@ -262,20 +262,18 @@ aiRrun_train <- function(data,
     }
     nbatch <- floor(nrow(data.train)/(batch.size))
   }
-  k <- 1
-  attempt <- 0
-  consec.attempt <- 0
-  while(k <= cycles) {
+
+  for(k in 1:cycles) {
     if(is.numeric(batch.size)) {
-      if((k+attempt)%%nbatch==1) {
+      if(k%%nbatch==1) {
         batches <- aiRbatch(data = data.train.save, batch.size = batch.size)
         data.train <- batches[[1]]
         classify.train <- data.train[,index]
       } else {
-        if((k+attempt)%%nbatch==0) {
+        if(k%%nbatch==0) {
           data.train <- batches[[nbatch]]
         } else {
-          data.train <- batches[[(k+attempt)%%nbatch]]
+          data.train <- batches[[k%%nbatch]]
         }
         classify.train <- data.train[,index]
       }
@@ -299,16 +297,11 @@ aiRrun_train <- function(data,
                           aiRnet = aiRnet,
                           report.class = F,
                           warning = warning)
-    if(k!=1&&(train.loss$total.loss>loss$train[k-1])){
-      attempt <- attempt + 1
-      consec.attempt <- consec.attempt + 1
-      if(consec.attempt==(2*nbatch*cycles)) {
-        warning(paste(2*nbatch*cycles, " consecutive attempts were made. Local minimum likely approached. Could not complete ",cycles," cycles. ",sep = ""))
-        loss <- na.exclude(loss)
-        break()
-      }
-    } else {
-      consec.attempt <- 0
+    if(k==1||(train.loss$total.loss<=train.loss.save$total.loss)){
+      train.loss.save <- train.loss
+      aiRnet.save <- aiRnet
+    }
+
       loss$train.error[k] <- train.rate$MeanError
       loss$train.fails[k] <- train.rate$failed.instances
       loss$train[k] <- train.loss$total.loss
@@ -319,18 +312,25 @@ aiRrun_train <- function(data,
                               n = n)
       }
       aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
-      k <- k + 1
-    }
-
 
   }
 
   if(data.return) {
-    aiR <- list(loss, aiRnet, data.train.save)
-    names(aiR) <- c("loss","aiRnet", "training.data")
+    if(train.loss$total.loss<=train.loss.save$total.loss) {
+      aiR <- list(loss, aiRnet, data.train.save)
+      names(aiR) <- c("loss","aiRnet", "training.data")
+    } else {
+      aiR <- list(loss, aiRnet, aiRnet.save, data.train.save)
+      names(aiR) <- c("loss","aiRnet.last", "aiRnet.best","training.data")
+    }
   } else {
-    aiR <- list(loss, aiRnet)
-    names(aiR) <- c("loss","aiRnet")
+    if(train.loss$total.loss<=train.loss.save$total.loss) {
+      aiR <- list(loss, aiRnet)
+      names(aiR) <- c("loss","aiRnet.last")
+    } else {
+      aiR <- list(loss, aiRnet, aiRnet.save)
+      names(aiR) <- c("loss","aiRnet.last", "aiRnet.best")
+    }
   }
   class(aiR$aiRnet) <- "aiRnet"
 
@@ -381,20 +381,17 @@ aiRrun_test <- function(data,
     }
     nbatch <- floor(nrow(data.train)/(batch.size))
   }
-  k <- 1
-  attempt <- 0
-  consec.attempt <- 0
-  while(k <= cycles) {
+  for(k in 1:cycles) {
     if(is.numeric(batch.size)) {
-      if((k+attempt)%%nbatch==1) {
+      if(k%%nbatch==1) {
         batches <- aiRbatch(data = data.train.save, batch.size = batch.size)
         data.train <- batches[[1]]
         classify.train <- data.train[,index]
       } else {
-        if((k+attempt)%%nbatch==0) {
+        if(k%%nbatch==0) {
           data.train <- batches[[nbatch]]
         } else {
-          data.train <- batches[[(k+attempt)%%nbatch]]
+          data.train <- batches[[k%%nbatch]]
         }
         classify.train <- data.train[,index]
       }
@@ -417,16 +414,10 @@ aiRrun_test <- function(data,
                                              aiRnet = aiRnet),
                          class.levels = class.levels,
                          classify = classify.test)
-    if(k!=1&&(train.loss$total.loss>loss$train[k-1])) {
-        attempt <- attempt + 1
-        consec.attempt <- consec.attempt + 1
-        if(consec.attempt==(2*nbatch)) {
-          warning(paste(2*nbatch, " consecutive attempts were made. Local minimum likely approached. Could not complete ",cycles," cycles. ",sep = ""))
-          loss <- na.exclude(loss)
-          break()
-        }
-    } else {
-      consec.attempt <- 0
+    if(k==1||(train.loss$total.loss<=train.loss.save$total.loss)){
+      train.loss.save <- train.loss
+      aiRnet.save <- aiRnet
+    }
       loss$train[k] <- train.loss$total.loss
       train.rate <- aiRrate(data = data.train,
                             factor = index,
@@ -448,19 +439,28 @@ aiRrun_test <- function(data,
                               total.loss = train.loss$total.loss,
                               aiRnet = aiRnet,
                               n = n)
-      }
+
       aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
-      k <- k + 1
     }
 
   }
 
   if(data.return) {
-    aiR <- list(loss, aiRnet, data.train.save, data.test)
-    names(aiR) <- c("loss","aiRnet", "training.data", "test.data")
+    if(train.loss$total.loss<=train.loss.save$total.loss) {
+      aiR <- list(loss, aiRnet, data.train.save, data.test.save)
+      names(aiR) <- c("loss","aiRnet", "training.data", "test.data")
+    } else {
+      aiR <- list(loss, aiRnet, aiRnet.save, data.train.save, data.test.save)
+      names(aiR) <- c("loss","aiRnet.last", "aiRnet.best","training.data", "test.data")
+    }
   } else {
-    aiR <- list(loss, aiRnet)
-    names(aiR) <- c("loss","aiRnet")
+    if(train.loss$total.loss<=train.loss.save$total.loss) {
+      aiR <- list(loss, aiRnet)
+      names(aiR) <- c("loss","aiRnet.last")
+    } else {
+      aiR <- list(loss, aiRnet, aiRnet.save)
+      names(aiR) <- c("loss","aiRnet.last", "aiRnet.best")
+    }
   }
   class(aiR$aiRnet) <- "aiRnet"
 
