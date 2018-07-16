@@ -899,3 +899,22 @@ aiRdevelop <- function(data,
 }
 
 
+cut2groups <- function(loss.prop) {
+  loss.prop <- as.data.frame(loss.prop)
+  n <- ncol(loss.prop)
+  p.vec <- vector("character",n)
+  for(i in 1:n) {
+    p.vec[i] <- paste("cut(loss.prop[,",i,"], breaks = c(-1.01,-.75,-.5,-.25,-.1,.1,.25,.5,.75,1))",sep = "")
+  }
+  p.vec <- str_flatten(p.vec,collapse = ", ")
+  factor <- eval(parse(text = paste("interaction(",p.vec,", sep = \"_\", drop = TRUE)")))
+  loss.prop$factor <- factor
+  m <- nlevels(loss.prop$factor)
+  mat <- matrix(rep(NA,n*m), nrow = m, ncol = n)
+  for(i in 1:m) {
+    app <- subset(loss.prop, factor %in% levels(loss.prop$factor)[i])[,-(n+1)]
+    app <- apply(app,2, sum)
+    mat[i,] <- app
+  }
+  return(mat)
+}
