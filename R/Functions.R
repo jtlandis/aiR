@@ -312,20 +312,26 @@ aiRrun_train <- function(data,
     if(train.loss$total.loss<=train.loss.save$total.loss) {
       aiR <- list(loss, aiRnet, data.train.save)
       names(aiR) <- c("loss","aiRnet", "training.data")
+      class(aiR$aiRnet) <- "aiRnet"
     } else {
       aiR <- list(loss, aiRnet, aiRnet.save, data.train.save)
       names(aiR) <- c("loss","aiRnet.last", "aiRnet.best","training.data")
+      class(aiR$aiRnet.last) <- "aiRnet"
+      class(aiR$aiRnet.best) <- "aiRnet"
     }
   } else {
     if(train.loss$total.loss<=train.loss.save$total.loss) {
       aiR <- list(loss, aiRnet)
-      names(aiR) <- c("loss","aiRnet.last")
+      names(aiR) <- c("loss","aiRnet")
+      class(aiR$aiRnet) <- "aiRnet"
     } else {
       aiR <- list(loss, aiRnet, aiRnet.save)
       names(aiR) <- c("loss","aiRnet.last", "aiRnet.best")
+      class(aiR$aiRnet.last) <- "aiRnet"
+      class(aiR$aiRnet.best) <- "aiRnet"
     }
   }
-  class(aiR$aiRnet) <- "aiRnet"
+
 
   return(aiR)
 }
@@ -436,20 +442,26 @@ aiRrun_test <- function(data,
     if(train.loss$total.loss<=train.loss.save$total.loss) {
       aiR <- list(loss, aiRnet, data.train.save, data.test.save)
       names(aiR) <- c("loss","aiRnet", "training.data", "test.data")
+      class(aiR$aiRnet) <- "aiRnet"
     } else {
       aiR <- list(loss, aiRnet, aiRnet.save, data.train.save, data.test.save)
       names(aiR) <- c("loss","aiRnet.last", "aiRnet.best","training.data", "test.data")
+      class(aiR$aiRnet.last) <- "aiRnet"
+      class(aiR$aiRnet.best) <- "aiRnet"
     }
   } else {
     if(train.loss$total.loss<=train.loss.save$total.loss) {
       aiR <- list(loss, aiRnet)
-      names(aiR) <- c("loss","aiRnet.last")
+      names(aiR) <- c("loss","aiRnet")
+      class(aiR$aiRnet) <- "aiRnet"
     } else {
       aiR <- list(loss, aiRnet, aiRnet.save)
       names(aiR) <- c("loss","aiRnet.last", "aiRnet.best")
+      class(aiR$aiRnet.last) <- "aiRnet"
+      class(aiR$aiRnet.best) <- "aiRnet"
     }
   }
-  class(aiR$aiRnet) <- "aiRnet"
+
 
   return(aiR)
 }
