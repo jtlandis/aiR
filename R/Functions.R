@@ -939,7 +939,7 @@ approximate_change <- function(loss,
   }
   mult.w <- abs(aiRnet[[t]]$change.w/w)
   aiRnet[[t]]$change.w <- w
-  aiRnet[[t]]$change.b <- aiRnet[[t]]$bias*mult.w
+  aiRnet[[t]]$change.b <- b
   mult.w <- sum(mult.w[1,]*(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))))) #likely underapproximates what long method would do.
   #mult.w <- mean(mult.w[1,])
   #mult.w <- mult.w[1,apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))) == max(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))))]
