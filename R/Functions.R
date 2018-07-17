@@ -935,7 +935,7 @@ approximate_change <- function(loss,
   b <- aiRnet[[t]]$bias*.row.work
   mat <- cut2groups(loss.prop = loss$loss.prop)
   for(i in 1:nrow(mat)) {
-    aiRnet <- aiRrowdelta1(loss.prop = mat[i,], total.loss = loss$total.loss, aiRnet = aiRnet, n = t)
+    aiRnet <- aiRrowdelta(loss.prop = mat[i,], total.loss = loss$total.loss, aiRnet = aiRnet, n = t)
   }
   mult.w <- abs(aiRnet[[t]]$change.w/w)
   aiRnet[[t]]$change.w <- w
