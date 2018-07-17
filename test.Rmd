@@ -177,7 +177,7 @@ train_additional <- data.frame(x = c(runif(n = 600,min = -1,0),runif(n = 600, mi
 
 ```{r}
 #build > load all
-newaiR <- aiRnet(c(2,50,50,6,4))
+newaiR <- aiRnet(c(2,4,6,4))
 aiRnet1 <- newaiR
 aiRnet2 <- newaiR
 t <- length(aiRnet1)
@@ -206,19 +206,30 @@ system.time(aiRnet2 <- test3())
 
 table(try.test$group)
 mult.w <- abs(aiRnet2[[t]]$change.w/w)
-mult.w[1,]
+#mult.w[1,]
 mult.w <- sum(mult.w[1,]*(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum)))))
 aiRnet2[[t]]$change.w <- w
+aiRnet2[[t]]$change.b <- abs(aiRnet2[[t]]$bias)*.row.work
 #mult.w <- mean(mult.w[1,])
 #mult.w <- mult.w[1,apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))) == max(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))))]
 for(a in 1:(t-1)) {
   aiRnet2[[a]]$change.w <- aiRnet2[[a]]$change.w/mult.w
+  aiRnet2[[a]]$change.b <- aiRnet2[[a]]$change.b/mult.w
 }
 
 for(i in t:1) {
-  print((aiRnet1[[i]]$change.w/aiRnet2[[i]]$change.w)[1,])
+  print((aiRnet1[[i]]$change.w/aiRnet2[[i]]$change.w))
+  print((aiRnet1[[i]]$change.b/aiRnet2[[i]]$change.b))
 }
 
+```
+
+```{r}
+aiRnet3 <- aiRrowdelta1(loss.prop = apply(loss$loss.prop,2,mean), total.loss = loss$total.loss, aiRnet = newaiR, n = t)
+
+for(i in t:1) {
+   print((aiRnet1[[i]]$change.w/aiRnet3[[i]]$change.w)[1,])
+}
 ```
 
 ```{r}
