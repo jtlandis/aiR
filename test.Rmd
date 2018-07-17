@@ -171,20 +171,24 @@ space.var <- aiRdevelop(data = train, var.classify = "group", aiRnet = mylayers,
 
 ```
 
+```{r}
+train_additional <- data.frame(x = c(runif(n = 600,min = -1,0),runif(n = 600, min = 0, 1)), y = c(runif(n = 600,min = 0,1),runif(n = 600, min = -1, 0)), group = as.factor(rep(c("g3","g4"), each = 600)))
+```
 
 ```{r}
 #build > load all
-newaiR <- aiRnet(c(2,4,15,6,2))
+newaiR <- aiRnet(c(2,50,50,6,4))
 aiRnet1 <- newaiR
 aiRnet2 <- newaiR
 t <- length(aiRnet1)
-s <- 100
-try.test <- train[sample(1:4200,s),]
+s <- 5000
+try.test <- rbind(train, train_additional)
+try.test <- try.test[sample(1:nrow(try.test),size = s),]
 
 
 
-loss <- aiRloss(data = aiRtransform(data = try.test[,-3], aiRnet = aiRnet1),class.levels = levels(train[,3]),classify = try.test[,3])
-additional.c <- apply(loss$loss.prop^2,2,mean)/((apply(loss$loss.prop,2,mean))^2)  # The proportion mean of squares to square of mean... (iteration of each row vs average each row)
+loss <- aiRloss(data = aiRtransform(data = try.test[,-3], aiRnet = aiRnet1),class.levels = levels(try.test[,3]),classify = try.test[,3])
+additional.c <- apply(loss$loss.prop*abs(loss$loss.prop),2,mean)/((apply(loss$loss.prop,2,mean)*abs(apply(loss$loss.prop,2,mean))))  # The proportion mean of squares to square of mean... (iteration of each row vs average each row)
 .app <- apply(loss$loss.prop,2, mean)
 .row.work <- additional.c*sqrt(length(.app))*.app*(abs(.app/(loss$total.loss)))
 w <- mat.opperation(x = abs(aiRnet2[[t]]$weights), y = .row.work, opperation = "*")
@@ -200,11 +204,13 @@ system.time(aiRnet1 <- test1())
 #system.time(aiRnet2 <- test2(aiRnet2 = aiRnet2))
 system.time(aiRnet2 <- test3())
 
-mult.w <- aiRnet2[[t]]$change.w/w
+table(try.test$group)
+mult.w <- abs(aiRnet2[[t]]$change.w/w)
 mult.w[1,]
-
-aiRnet2[[t]]$change.w <- aiRnet2[[t]]$change.w/mult.w
-mult.w <- mean(mult.w[1,])
+mult.w <- sum(mult.w[1,]*(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum)))))
+aiRnet2[[t]]$change.w <- w
+#mult.w <- mean(mult.w[1,])
+#mult.w <- mult.w[1,apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))) == max(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))))]
 for(a in 1:(t-1)) {
   aiRnet2[[a]]$change.w <- aiRnet2[[a]]$change.w/mult.w
 }

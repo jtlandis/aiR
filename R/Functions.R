@@ -305,14 +305,7 @@ aiRrun_train <- function(data,
       loss$train.error[k] <- train.rate$MeanError
       loss$train.fails[k] <- train.rate$failed.instances
       loss$train[k] <- train.loss$total.loss
-      for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss,
-        aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop[i,],  #Does average of all observations to speed up computation time.
-                              total.loss = train.loss$total.loss,
-                              aiRnet = aiRnet,
-                              n = n)
-      }
-      aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
-
+      aiRnet <- approximate_change(loss = train.loss, aiRnet = aiRnet)
   }
 
   if(data.return) {
@@ -434,14 +427,8 @@ aiRrun_test <- function(data,
                            warning = warning)
       loss$test.error[k] <- test.rate$MeanError
       loss$test.fails[k] <- test.rate$failed.instances
-      for(i in 1:length(train.loss$row.loss)) { #for each input, start with loss
-        aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop[i,],
-                              total.loss = train.loss$total.loss,
-                              aiRnet = aiRnet,
-                              n = n)
-
-      aiRnet <- aiRfresh(aiRnet = aiRnet,rows = length(train.loss$row.loss), n = n)
-    }
+      aiRnet <- approximate_change(loss = train.loss,
+                                   aiRnet = aiRnet)
 
   }
 
@@ -898,7 +885,16 @@ aiRdevelop <- function(data,
   return(space.var)
 }
 
-
+#' @name cut2groups
+#'
+#' @description cuts loss.prop into groups based on how much each node should change
+#' breaks are listed as c(-1.01,-.75,-.5,-.25,-.1,.1,.25,.5,.75,1)
+#'
+#' @title cut2groups
+#'
+#' @param loss.prop loss.prop in aiRloss object
+#'
+#' @return summarised matrix of loss.prop
 cut2groups <- function(loss.prop) {
   loss.prop <- as.data.frame(loss.prop)
   n <- ncol(loss.prop)
@@ -918,3 +914,40 @@ cut2groups <- function(loss.prop) {
   }
   return(mat)
 }
+
+#' @name approximate_change
+#'
+#' @title approximate_change
+#'
+#' @description approximates the change of an iterative gradient decent
+#'
+#' @param loss aiRloss object created by aiRloss function
+#' @param aiRnet aiRnet object created by aiRnet function
+#'
+#' @return return approximate change to aiRnet based on loss
+approximate_change <- function(loss,
+                              aiRnet) {
+  t <- length(aiRnet)
+  .app <- apply(loss$loss.prop,2, mean)
+  additional.c <- apply(loss$loss.prop*abs(loss$loss.prop),2,mean)/((apply(loss$loss.prop,2,mean)*abs(apply(loss$loss.prop,2,mean))))
+  .row.work <- additional.c*sqrt(length(.app))*.app*(abs(.app/(loss$total.loss)))
+  w <- mat.opperation(x = abs(aiRnet[[t]]$weights), y = .row.work, opperation = "*")
+  b <- aiRnet[[t]]$bias*.row.work
+  mat <- cut2groups(loss.prop = loss$loss.prop)
+  for(i in 1:nrow(mat)) {
+    aiRnet <- aiRrowdelta1(loss.prop = mat[i,], total.loss = loss$total.loss, aiRnet = aiRnet, n = t)
+  }
+  mult.w <- abs(aiRnet[[t]]$change.w/w)
+  aiRnet[[t]]$change.w <- w
+  aiRnet[[t]]$change.b <- aiRnet[[t]]$bias*mult.w
+  mult.w <- sum(mult.w[1,]*(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))))) #likely underapproximates what long method would do.
+  #mult.w <- mean(mult.w[1,])
+  #mult.w <- mult.w[1,apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))) == max(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))))]
+  for(a in 1:(t-1)) {
+    aiRnet[[a]]$change.w <- aiRnet[[a]]$change.w/mult.w
+    aiRnet[[a]]$change.b <- aiRnet[[a]]$change.b/mult.w
+  }
+  aiRnet <- aiRfresh(aiRnet = aiRnet, rows = length(loss$row.loss), n = t)
+  return(aiRnet)
+}
+
