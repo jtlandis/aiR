@@ -98,6 +98,7 @@ is.aiRnet <- function(x) inherits(x, "aiRnet")
 #' @param test toggle if TRUE if test set loss and error should be reported as well. Default set to FALSE
 #' @param na.rm remove NAs, default set to TRUE. Function likely to fail with NAs
 #' @param data.return logical determines if data should be returned to the user. Default set to FALSE
+#' @param method.propigate "fast" or "slow", how quickly you want to go through propigation step.
 #'
 #' @return data frame of loss and the aiRnet of the training values. data set used is optional
 #'
@@ -112,7 +113,8 @@ aiRrun <- function(data,
                    train.Factor = NULL,
                    test = FALSE,
                    na.rm=TRUE,
-                   data.return = FALSE) {
+                   data.return = FALSE,
+                   method.propigate = "fast") {
   if(!is.aiRnet(aiRnet)){
     stop("aiRnet must be of class \"aiRnet\"")
   }
@@ -236,6 +238,7 @@ aiRsubset <- function(x, train.method, sample.size, train.Factor = NULL) {
 #' @param batch.size Number indicating how many rows to make batches from training sample. Default set to "all"
 #' for no batches to be made.
 #' @param data.return logical determines if data should be returned to the user. Default set to FALSE
+#' @param method.propigate "fast" or "slow", how quickly you want to go through propigation step.
 #'
 #' @return loss, aiRnet, traing.data
 aiRrun_train <- function(data,
@@ -246,7 +249,8 @@ aiRrun_train <- function(data,
                          aiRnet,
                          cycles = 100,
                          batch.size = "all",
-                         data.return = FALSE) {
+                         data.return = FALSE,
+                         method.propigate = "fast") {
   classify <- data[,index]
   classify.train <- classify[sample.rows]
 
@@ -305,7 +309,11 @@ aiRrun_train <- function(data,
       loss$train.error[k] <- train.rate$MeanError
       loss$train.fails[k] <- train.rate$failed.instances
       loss$train[k] <- train.loss$total.loss
-      aiRnet <- approximate_change(loss = train.loss, aiRnet = aiRnet)
+      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,
+                            total.loss = train.loss$total.loss,
+                            aiRnet = aiRnet,
+                            n = n,
+                            method.propigate = method.propigate)
   }
 
   if(data.return) {
@@ -352,6 +360,7 @@ aiRrun_train <- function(data,
 #' @param batch.size Number indicating how many rows to make batches from training sample. Default set to "all"
 #' for no batches to be made.
 #' @param data.return logical determines if data should be returned to the user. Default set to FALSE
+#' @param method.propigate "fast" or "slow", how quickly you want to go through propigation step.
 #'
 #' @return loss, aiRnet, traing.data and test.data
 aiRrun_test <- function(data,
@@ -362,7 +371,8 @@ aiRrun_test <- function(data,
                         aiRnet,
                         cycles = 100,
                         batch.size = "all",
-                        data.return = FALSE) {
+                        data.return = FALSE,
+                        method.propigate = "fast") {
   classify <- data[,index]
   classify.train <- classify[sample.rows]
   classify.test <- classify[!sample.rows]
@@ -433,8 +443,11 @@ aiRrun_test <- function(data,
                            warning = warning)
       loss$test.error[k] <- test.rate$MeanError
       loss$test.fails[k] <- test.rate$failed.instances
-      aiRnet <- approximate_change(loss = train.loss,
-                                   aiRnet = aiRnet)
+      aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,
+                            total.loss = train.loss$total.loss,
+                            aiRnet = aiRnet,
+                            n = n,
+                            method.propigate = method.propigate)
 
   }
 
@@ -673,29 +686,37 @@ mat.opperation <- function(x,y, opperation){
 aiRrowdelta <- function(loss.prop,
                         total.loss,
                         aiRnet,
-                        n) {
+                        n,
+                        method.propigate) {
 
-
-  #g <- nrow(loss.prop)
-  #row.work <- apply(loss.prop,2,mean)
-  #additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
-  #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
-  row.work <- sqrt(length(loss.prop))*loss.prop*(abs(loss.prop/(total.loss)))
-  for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
-    w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
-    aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
-    b <- abs(aiRnet[[j]]$bias)*row.work
-    aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
-    new.loss <- apply(w,1,mean)
-      # data.work <- aiRtransform(data = data[,-index], aiRnet = aiRnet, n = j-1)
-      # new.loss <- sqrt(length(new.loss))*new.loss*(abs(new.loss))/(sum(abs(new.loss)))
-      # loss.work <- mat.opperation(x = as.matrix(data.work), y = new.loss, opperation = "*")
-      # new.loss <- apply(loss.work, 2, mean)
-      #additional.c <- apply(loss.work*abs(loss.work),2,mean)/((apply(loss.work,2,mean)*abs(apply(loss.work,2,mean))))
-      #additional.c <- apply(as.data.frame(w)*abs(as.data.frame(w)),1,mean)/((apply(as.data.frame(w),1,mean)*abs(apply(as.data.frame(w),1,mean))))
-      row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
-
-
+  if(method.propigate=="fast") {
+    #g <- nrow(loss.prop)
+    row.work <- apply(loss.prop,2,mean)
+    additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
+    #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
+    row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
+    for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
+      w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
+      aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
+      b <- abs(aiRnet[[j]]$bias)*row.work
+      aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
+      new.loss <- apply(w,1,mean)
+      if(j!=1) {
+        row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+      }
+    }
+  } else if (method.propigate=="slow"){
+    for(i in 1:nrow(loss.prop)) {
+      row.work <- sqrt(length(loss.prop))*loss.prop*(abs(loss.prop/(total.loss)))
+      for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
+        w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
+        aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
+        b <- abs(aiRnet[[j]]$bias)*row.work
+        aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
+        new.loss <- apply(w,1,mean)
+        row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+      }
+    }
   }
   return(aiRnet)
 }
@@ -897,69 +918,5 @@ aiRdevelop <- function(data,
   return(space.var)
 }
 
-#' @name cut2groups
-#'
-#' @description cuts loss.prop into groups based on how much each node should change
-#' breaks are listed as c(-1.01,-.75,-.5,-.25,-.1,.1,.25,.5,.75,1)
-#'
-#' @title cut2groups
-#'
-#' @param loss.prop loss.prop in aiRloss object
-#'
-#' @return summarised matrix of loss.prop
-cut2groups <- function(loss.prop) {
-  loss.prop <- as.data.frame(loss.prop)
-  n <- ncol(loss.prop)
-  p.vec <- vector("character",n)
-  for(i in 1:n) {
-    p.vec[i] <- paste("cut(loss.prop[,",i,"], breaks = c(-1.01,-.75,-.5,-.25,-.1,.1,.25,.5,.75,1))",sep = "")
-  }
-  p.vec <- str_flatten(p.vec,collapse = ", ")
-  factor <- eval(parse(text = paste("interaction(",p.vec,", sep = \"_\", drop = TRUE)")))
-  loss.prop$factor <- factor
-  m <- nlevels(loss.prop$factor)
-  mat <- matrix(rep(NA,n*m), nrow = m, ncol = n)
-  for(i in 1:m) {
-    app <- subset(loss.prop, factor %in% levels(loss.prop$factor)[i])[,-(n+1)]
-    app <- apply(app,2, sum)
-    mat[i,] <- app
-  }
-  return(mat)
-}
 
-#' @name approximate_change
-#'
-#' @title approximate_change
-#'
-#' @description approximates the change of an iterative gradient decent
-#'
-#' @param loss aiRloss object created by aiRloss function
-#' @param aiRnet aiRnet object created by aiRnet function
-#'
-#' @return return approximate change to aiRnet based on loss
-approximate_change <- function(loss,
-                              aiRnet) {
-  t <- length(aiRnet)
-  .app <- apply(loss$loss.prop,2, mean)
-  additional.c <- apply(loss$loss.prop*abs(loss$loss.prop),2,mean)/((apply(loss$loss.prop,2,mean)*abs(apply(loss$loss.prop,2,mean))))
-  .row.work <- additional.c*sqrt(length(.app))*.app*(abs(.app/(loss$total.loss)))
-  w <- mat.opperation(x = abs(aiRnet[[t]]$weights), y = .row.work, opperation = "*")
-  b <- aiRnet[[t]]$bias*.row.work
-  mat <- cut2groups(loss.prop = loss$loss.prop)
-  for(i in 1:nrow(mat)) {
-    aiRnet <- aiRrowdelta(loss.prop = mat[i,], total.loss = loss$total.loss, aiRnet = aiRnet, n = t)
-  }
-  mult.w <- abs(aiRnet[[t]]$change.w/w)
-  aiRnet[[t]]$change.w <- w
-  aiRnet[[t]]$change.b <- b
-  mult.w <- sum(mult.w[1,]*(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))))) #likely underapproximates what long method would do.
-  #mult.w <- mean(mult.w[1,])
-  #mult.w <- mult.w[1,apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))) == max(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))))]
-  for(a in 1:(t-1)) {
-    aiRnet[[a]]$change.w <- aiRnet[[a]]$change.w/mult.w
-    aiRnet[[a]]$change.b <- aiRnet[[a]]$change.b/mult.w
-  }
-  aiRnet <- aiRfresh(aiRnet = aiRnet, rows = length(loss$row.loss), n = t)
-  return(aiRnet)
-}
 
