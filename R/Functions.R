@@ -717,7 +717,7 @@ aiRrowdelta <- function(loss.prop,
                        method.propigate = method.propigate)
   } else if (method.propigate=="slow"){
     for(i in 1:nrow(loss.prop)) {
-      row.work <- sqrt(length(loss.prop))*loss.prop*(abs(loss.prop/(total.loss)))
+      row.work <- sqrt(length(loss.prop[i,]))*loss.prop[i,]*(abs(loss.prop[i,]/(total.loss)))
       for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
         w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
         aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
