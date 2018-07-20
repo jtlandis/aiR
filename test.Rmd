@@ -112,7 +112,7 @@ ggplot(data = loss.aiR$loss,aes(x = iteration)) +
 ```
 
 ```{r}
-new <- aiRactivation(data = train[,-3], aiRnet = loss.aiR$aiRnet, range.size = 10000)
+new <- aiRactivation(data = train[,-3], aiRnet = loss.aiR$aiRnet.last, range.size = 10000)
 
 ```
 
@@ -150,7 +150,7 @@ ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
 
 
 ```{r}
-classify_obj <- aiRclassify(data = new$data_model, factor = levels(train$group), aiRnet = loss.aiR$aiRnet)
+classify_obj <- aiRclassify(data = new$data_model, factor = levels(train$group), aiRnet = loss.aiR$aiRnet.last)
 ```
 
 ```{r}
@@ -159,7 +159,7 @@ ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
 ```
 
 ```{r}
-aiRrate(data = train, factor = "group", aiRnet = loss.aiR$aiRnet)
+aiRrate(data = train, factor = "group", aiRnet = loss.aiR$aiRnet.last)
 ```
 
 
@@ -178,324 +178,11 @@ train_additional <- data.frame(x = c(runif(n = 600,min = -1,0),runif(n = 600, mi
 
 ```{r}
 #build > load all
-newaiR <- aiRnet(c(2,500,500,6,4))
+newaiR <- aiRnet(c(2,100,100,6,4))
 aiRnet1 <- newaiR
 aiRnet2 <- newaiR
-t <- length(aiRnet1)
-s <- 1000
 try.test <- rbind(train, train_additional)
-try.test <- try.test[sample(1:nrow(try.test),size = s),]
 
-
-
-loss <- aiRloss(data = aiRtransform(data = try.test[,-3], aiRnet = aiRnet1),class.levels = levels(try.test[,3]),classify = try.test[,3])
-additional.c <- apply(loss$loss.prop*abs(loss$loss.prop),2,mean)/((apply(loss$loss.prop,2,mean)*abs(apply(loss$loss.prop,2,mean))))  # The proportion mean of squares to square of mean... (iteration of each row vs average each row)
-.app <- apply(loss$loss.prop,2, mean)
-.row.work <- additional.c*sqrt(length(.app))*.app*(abs(.app/(loss$total.loss)))
-w <- mat.opperation(x = abs(aiRnet2[[t]]$weights), y = .row.work, opperation = "*")
-
-system.time(aiRnet1 <- test1())
-   
-
-
-# aiRnet2 <- aiRrowdelta2(loss.prop = loss$loss.prop,
-#                        total.loss = loss$total.loss,
-#                        aiRnet = aiRnet2,
-#                        n = t, data = try.test, index = 3)
-#system.time(aiRnet2 <- test2(aiRnet2 = aiRnet2))
-system.time(aiRnet2 <- last_attempt())
-
-# table(try.test$group)
-# mult.w <- abs(aiRnet2[[t]]$change.w/w)
-# #mult.w[1,]
-# mult.w <- sum(mult.w[1,]*(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum)))))
-# aiRnet2[[t]]$change.w <- w
-# aiRnet2[[t]]$change.b <- abs(aiRnet2[[t]]$bias)*.row.work
-# #mult.w <- mean(mult.w[1,])
-# #mult.w <- mult.w[1,apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))) == max(apply(abs(loss$loss.prop),2,sum)/(sum(apply(abs(loss$loss.prop),2,sum))))]
-# for(a in 1:(t-1)) {
-#   aiRnet2[[a]]$change.w <- aiRnet2[[a]]$change.w/mult.w
-#   aiRnet2[[a]]$change.b <- aiRnet2[[a]]$change.b/mult.w
-# }
-
-for(i in t:1) {
-  x<- (aiRnet1[[i]]$change.w/aiRnet2[[i]]$change.w)[1,]
-  print(x)
-  print(mean(x))
-  print((aiRnet1[[i]]$change.b/aiRnet2[[i]]$change.b))
-}
-
+system.time(fast <- aiRrun(data = try.test, var.classify = "group",aiRnet = aiRnet1,cycles = 50,sample.size = 1,batch.size = 100,method.propigate = "fast"))
+system.time(slow <- aiRrun(data = try.test, var.classify = "group",aiRnet = aiRnet2,cycles = 50,sample.size = 1,batch.size = 100,method.propigate = "slow"))
 ```
-
-```{r}
-test4 <- function() {
-a <- foreach(i=1:(length(loss$row.loss))) %dopar% {
-  aiRrowdelta3(loss.prop = loss$loss.prop[i,],total.loss = loss$total.loss, aiRnet = aiRnet2,n = t)
-}
-test <- get_change_average(apply.test = a, n = length(aiRnet2))
-  for(i in 1:length(aiRnet2)) {
-    aiRnet2[[i]]$change.w <- test[[i]]$change.w
-    aiRnet2[[i]]$change.b <- test[[i]]$change.b
-  }
-return(aiRnet2)
-}
-```
-
-
-```{r}
-aiRnet3 <- aiRrowdelta1(loss.prop = apply(loss$loss.prop,2,mean), total.loss = loss$total.loss, aiRnet = newaiR, n = t)
-
-for(i in t:1) {
-   print((aiRnet1[[i]]$change.w/aiRnet3[[i]]$change.w)[1,])
-}
-```
-
-```{r}
-aiRrowdelta2 <- function(loss.prop,
-                        total.loss,
-                        aiRnet,
-                        n,
-                        data,
-                        index) {
-  
-
-  #g <- nrow(loss.prop)
-  row.work <- apply(loss.prop,2,mean)
-  additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
-  #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
-  row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
-  for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
-    w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
-    aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
-    b <- abs(aiRnet[[j]]$bias)*row.work
-    aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
-    new.loss <- apply(w,1,mean)
-    if(j!=1) {
-      data.work <- aiRtransform(data = data[,-index], aiRnet = aiRnet, n = j-1)
-      new.loss <- sqrt(length(new.loss))*new.loss*(abs(new.loss))/(sum(abs(new.loss)))
-      loss.work <- mat.opperation(x = as.matrix(data.work), y = new.loss, opperation = "*")
-      new.loss <- apply(loss.work, 2, mean)
-      additional.c <- apply(loss.work*abs(loss.work),2,mean)/((apply(loss.work,2,mean)*abs(apply(loss.work,2,mean))))
-    #additional.c <- apply(as.data.frame(w)*abs(as.data.frame(w)),1,mean)/((apply(as.data.frame(w),1,mean)*abs(apply(as.data.frame(w),1,mean))))
-    row.work <- additional.c*sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
-    }
-    
-  }
-  return(aiRnet)
-}
-```
-
-```{r}
-aiRrowdelta1 <- function(loss.prop,
-                        total.loss,
-                        aiRnet,
-                        n) {
-  #g <- nrow(loss.prop)
-  #row.work <- apply(loss.prop,2,mean)
-  #additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
-  #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
-  row.work <- sqrt(length(loss.prop))*loss.prop*(abs(loss.prop/(total.loss)))
-  for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
-    w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
-    aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
-    b <- abs(aiRnet[[j]]$bias)*row.work
-    aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
-    new.loss <- apply(w,1,mean)
-    #additional.c <- (sum(apply(loss.prop,2,mean)^2))*(sum(abs(apply(loss.prop^2,1,sum)))/(g*(sum(apply(loss$loss.prop^2,1,sum)*abs(apply(loss$loss.prop^2,1,sum))))))
-    row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
-  }
-  return(aiRnet)
-}
-```
-
-```{r}
-test_func <- function(x) {
-  print(abs(x[1]*x[3]+x[2]*x[4])+abs(x[1]*x[5]+x[2]*x[6]))
-  print(abs(x[1]+x[2])*abs(abs(x[3])+abs(x[4])))
-}
-```
-```{r}
-test_func(runif(6,min = -1))
-```
-
-```{r}
-aiRrowdelta3 <- function(loss.prop,
-                        total.loss,
-                        aiRnet,
-                        n) {
-
-
-  vec.work <- vector("list", length(aiRnet))
-
-  row.work <- sqrt(length(loss.prop))*loss.prop*(abs(loss.prop/(total.loss)))
-  for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
-    w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
-    b <- abs(aiRnet[[j]]$bias)*row.work
-    vec.work[[j]] <- list(w,b)
-    names(vec.work[[j]]) <- c("change.w","change.b")
-    new.loss <- apply(w,1,mean)
-  
-      row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
-
-
-  }
-  return(vec.work)
-}
-```
-```{r}
-first.row.work <- function(loss.prop, prop.factor) {
-  row.work <- sqrt(length(loss.prop))*loss.prop*(prop.factor)
-  return(row.work)
-}
-w.change <- function(row.work,
-                     aiRnet_layer) {
-    w <- mat.opperation(x = abs(aiRnet_layer$weights), y = row.work, opperation = "*")
-    b <- abs(aiRnet_layer$bias)*row.work
-    vec.work <- list(w,b)
-    names(vec.work) <- c("change.w","change.b")
-    return(vec.work)
-}
-
-new.row.work <- function(row.work, aiRnet2_layer) {
-  w <- sweep(abs(aiRnet2_layer$weights),2, row.work, "*")
-  new.loss <- apply(w,1,mean) #consider taking this line out... replace overall algorithm to scale to returned sum(abs(row.work))... total data, not just each line.
-  return(new.loss)
-}
-```
-```{r}
-last_attempt <- function(loss, aiRnet2, mc.cores) {
-  .list <- vector("list",length(loss$row.loss))
-  for(i in 1:length(.list)) {.list[[i]] <- loss$loss.prop[i,]}
-  my.list <- mclapply(.list, first.row.work, total.loss = loss$total.loss, mc.cores = mc.cores)
-  for(i in t:1) {
-   my.list <- mclapply(my.list, w.change, aiRnet_layer = aiRnet2[[i]], mc.cores = mc.cores)
-   change.w.list <- lapply(my.list, get_layer_change, layer = "change.w")
-   aiRnet2[[i]]$change.w <- average_list(change.w.list)
-   aiRnet2[[i]]$change.b <- average_list(lapply(my.list, get_layer_change, layer = "change.b"))
-   if(i!=1) {my.list <- lapply(change.w.list, new.row.work)}
-  } 
-  return(aiRnet2)
-}
-```
-
-```{r}
-get_change.w <- function(loss.prop, row.work, aiRnet2_layer) {
-  additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
-  row.work <- additional.c*row.work
-  aiRnet2_layer$change.w <- sweep(abs(aiRnet2_layer$weights), 2, row.work, FUN = "*")
-  aiRnet2_layer$change.b <- abs(aiRnet2_layer$bias)*row.work
-  return(aiRnet2_layer)
-}
-
-last_attempt <- function() {
-  new.loss.prop <- loss$loss.prop
-  prop.factor <- abs(apply(new.loss.prop,2,mean)/(total.loss))
-for(i in t:1) {
-  row.work <- first.row.work(loss.prop = apply(new.loss.prop,2,mean), prop.factor = prop.factor)
-  aiRnet2[[i]] <- get_change.w(loss.prop = new.loss.prop, row.work = row.work, aiRnet2_layer = aiRnet2[[i]])
-  new.loss.prop <- t(apply(new.loss.prop,1,new.row.work, aiRnet2_layer = aiRnet2[[i]]))
-  prop.factor <- new.loss.prop/(apply(X = abs(new.loss.prop),MARGIN = 1, sum))
-}
-  
-  return(aiRnet2)
-}
-
-
-```
-
-```{r}
-get_layer_change <- function(x, layer) {
-  return(x[[layer]])
-}
-```
-
-```{r}
-average_list <- function(x) {
-  x.work <- x[[1]]
-  for(i in 2:length(x)) {
-    x.work <- x.work + x[[i]]
-  }
-  x.work <- x.work/length(x)
-  return(x.work)
-}
-```
-
-```{r}
-apply_average <- function(x,aiRlayer, w.b, mc.cores) {
-  a <- average_list(mclapply(mclapply(x,get_layer_change, layer = aiRlayer, mc.cores = mc.cores), get_layer_change, layer = w.b, mc.cores = mc.cores))
-  return(a)
-}
-
-```
-```{r}
-get_change_average <- function(apply.test, n, mc.cores) {
-  list.work <- vector("list",n)
-  for(i in 1:n) {
-    new.w <- apply_average(x = apply.test, aiRlayer = i, w.b = 1, mc.cores = mc.cores)
-    new.b <- apply_average(x = apply.test, aiRlayer = i, w.b = 2, mc.cores = mc.cores)
-    list.work[[i]] <- list(new.w,new.b)
-    names(list.work[[i]]) <- c("change.w","change.b")
-  }
-  return(list.work)
-}
-
-```
-```{r}
-test1 <- function() {
-  for(i in 1:length(loss$row.loss)) { #for each input, start with loss
-      aiRnet1 <- aiRrowdelta1(loss.prop = loss$loss.prop[i,],
-                            total.loss = loss$total.loss,
-                            aiRnet = aiRnet1,
-                            n = t)}                                                      
-
-for(i in 1:t) {
-  aiRnet1[[i]]$change.w <- aiRnet1[[i]]$change.w/s
-  aiRnet1[[i]]$change.b <- aiRnet1[[i]]$change.b/s
-}
-  return(aiRnet1)
-}
-```
-
-```{r}
-test2 <- function() {
-  .list <- vector("list",nrow(loss$loss.prop))
-  for(i in 1:length(.list)) { .list[[i]] <- loss$loss.prop[i,]}
-  apply.test <- mclapply(X = .list,FUN = aiRrowdelta3, total.loss = loss$total.loss, aiRnet = aiRnet2, n = t)
-  test <- get_change_average(apply.test = apply.test, n = length(aiRnet2))
-  for(i in 1:length(aiRnet2)) {
-    aiRnet2[[i]]$change.w <- test[[i]]$change.w
-    aiRnet2[[i]]$change.b <- test[[i]]$change.b
-  }
-  return(aiRnet2)
-}
-```
-
-```{r}
-test3 <- function() {
-  mat <- cut2groups(loss.prop = loss$loss.prop)
-  for(i in 1:nrow(mat)) {
-    aiRnet2 <- aiRrowdelta1(loss.prop = mat[i,], total.loss = loss$total.loss, aiRnet = aiRnet2, n = t)
-  }
-
-  for(i in 1:t) {
-  aiRnet2[[i]]$change.w <- aiRnet2[[i]]$change.w/s
-  aiRnet2[[i]]$change.b <- aiRnet2[[i]]$change.b/s
-}
-  return(aiRnet2)
-}
-```
-```{r}
-desperate <- function() {
-  browser()
-  lapply(X = .list,FUN = aiRrowdelta3, total.loss = loss$total.loss, aiRnet = aiRnet2, n = t)
-}
-```
-
-```{r}
-system.time(apply.test <- test1())
-for(i in 2:30) {
-  print(i)
-  print(system.time(apply.test <- last_attempt(loss = loss, aiRnet2 = aiRnet2, mc.cores = i)))
-}
-```
-

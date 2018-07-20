@@ -330,8 +330,8 @@ aiRrun_train <- function(data,
       class(aiR$aiRnet) <- "aiRnet"
     } else {
       aiR <- list(loss, aiRnet, aiRnet.save, data.train.save)
-      names(aiR) <- c("loss","aiRnet.last", "aiRnet.best","training.data")
-      class(aiR$aiRnet.last) <- "aiRnet"
+      names(aiR) <- c("loss","aiRnet", "aiRnet.best","training.data")
+      class(aiR$aiRnet) <- "aiRnet"
       class(aiR$aiRnet.best) <- "aiRnet"
     }
   } else {
@@ -341,8 +341,8 @@ aiRrun_train <- function(data,
       class(aiR$aiRnet) <- "aiRnet"
     } else {
       aiR <- list(loss, aiRnet, aiRnet.save)
-      names(aiR) <- c("loss","aiRnet.last", "aiRnet.best")
-      class(aiR$aiRnet.last) <- "aiRnet"
+      names(aiR) <- c("loss","aiRnet", "aiRnet.best")
+      class(aiR$aiRnet) <- "aiRnet"
       class(aiR$aiRnet.best) <- "aiRnet"
     }
   }
@@ -465,8 +465,8 @@ aiRrun_test <- function(data,
       class(aiR$aiRnet) <- "aiRnet"
     } else {
       aiR <- list(loss, aiRnet, aiRnet.save, data.train.save, data.test.save)
-      names(aiR) <- c("loss","aiRnet.last", "aiRnet.best","training.data", "test.data")
-      class(aiR$aiRnet.last) <- "aiRnet"
+      names(aiR) <- c("loss","aiRnet", "aiRnet.best","training.data", "test.data")
+      class(aiR$aiRnet) <- "aiRnet"
       class(aiR$aiRnet.best) <- "aiRnet"
     }
   } else {
@@ -476,8 +476,8 @@ aiRrun_test <- function(data,
       class(aiR$aiRnet) <- "aiRnet"
     } else {
       aiR <- list(loss, aiRnet, aiRnet.save)
-      names(aiR) <- c("loss","aiRnet.last", "aiRnet.best")
-      class(aiR$aiRnet.last) <- "aiRnet"
+      names(aiR) <- c("loss","aiRnet", "aiRnet.best")
+      class(aiR$aiRnet) <- "aiRnet"
       class(aiR$aiRnet.best) <- "aiRnet"
     }
   }
