@@ -131,6 +131,9 @@ aiRrun <- function(data,
   if(!is.element(data.return, c(TRUE,FALSE))) {
     stop("data.return must be either TRUE or FALSE")
   }
+  if(!is.element(method.propigate, c("fast","slow"))) {
+    stop("method.propigate must be either \"fast\" or \"slow\"")
+  }
   if(!is.factor(data[,index])) {
     stop("var.classify must be assigned a factor vector as a classification variable.")
   } else {
@@ -146,7 +149,8 @@ aiRrun <- function(data,
                         sample.rows = sample.rows,
                         aiRnet = aiRnet,
                         cycles = cycles,
-                        batch.size= batch.size)
+                        batch.size= batch.size,
+                        method.propigate = method.propigate)
   } else {
     if(nrow(data)==sum(sample.rows)) {
       warning("All rows of data are used in training set. No test data will be returned.")
@@ -157,7 +161,8 @@ aiRrun <- function(data,
                           sample.rows = sample.rows,
                           aiRnet = aiRnet,
                           cycles = cycles,
-                          batch.size= batch.size)
+                          batch.size= batch.size,
+                          method.propigate = method.propigate)
     } else {
       aiR <- aiRrun_test(data = data,
                          index = index,
@@ -166,7 +171,8 @@ aiRrun <- function(data,
                          sample.rows = sample.rows,
                          aiRnet = aiRnet,
                          cycles = cycles,
-                         batch.size= batch.size)  #slightly longer compute time, calculates training loss
+                         batch.size= batch.size,  #slightly longer compute time, calculates training loss
+                         method.propigate = method.propigate)
     }
   }
   return(aiR)
@@ -314,6 +320,7 @@ aiRrun_train <- function(data,
                             aiRnet = aiRnet,
                             n = n,
                             method.propigate = method.propigate)
+      aiRnet <- aiRfresh(aiRnet, rows = , n = n)
   }
 
   if(data.return) {
@@ -705,6 +712,9 @@ aiRrowdelta <- function(loss.prop,
         row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
       }
     }
+    aiRnet <- aiRfresh(aiRnet = aiRnet,
+                       n = n,
+                       method.propigate = method.propigate)
   } else if (method.propigate=="slow"){
     for(i in 1:nrow(loss.prop)) {
       row.work <- sqrt(length(loss.prop))*loss.prop*(abs(loss.prop/(total.loss)))
@@ -717,6 +727,10 @@ aiRrowdelta <- function(loss.prop,
         row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
       }
     }
+    aiRnet <- aiRfresh(aiRnet = aiRnet,
+                       rows = nrow(loss.prop),
+                       n = n,
+                       method.propigate = method.propigate)
   }
   return(aiRnet)
 }
@@ -731,14 +745,23 @@ aiRrowdelta <- function(loss.prop,
 #'
 #' @return returns aiRnet object with change.w and change.b added
 #' to weights and bias respectively
-aiRfresh <- function(aiRnet, rows, n) {
-  for(i in 1:n) {
-    aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w/rows
-    aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b/rows
-    aiRnet[[i]]$weights <- aiRnet[[i]]$weights + aiRnet[[i]]$change.w
-    aiRnet[[i]]$bias <- aiRnet[[i]]$bias + aiRnet[[i]]$change.b
-    aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w*0
-    aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b*0
+aiRfresh <- function(aiRnet, rows = NULL, n, method.propigate = "fast") {
+  if(method.propigate=="fast") {
+    for(i in 1:n) {
+      aiRnet[[i]]$weights <- aiRnet[[i]]$weights + aiRnet[[i]]$change.w
+      aiRnet[[i]]$bias <- aiRnet[[i]]$bias + aiRnet[[i]]$change.b
+      aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w*0
+      aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b*0
+    }
+  } else if(method.propigate=="slow"){
+    for(i in 1:n) {
+      aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w/rows
+      aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b/rows
+      aiRnet[[i]]$weights <- aiRnet[[i]]$weights + aiRnet[[i]]$change.w
+      aiRnet[[i]]$bias <- aiRnet[[i]]$bias + aiRnet[[i]]$change.b
+      aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w*0
+      aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b*0
+    }
   }
   return(aiRnet)
 }

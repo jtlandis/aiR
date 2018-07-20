@@ -4,7 +4,7 @@
 \alias{aiRfresh}
 \title{aiRfresh}
 \usage{
-aiRfresh(aiRnet, rows, n)
+aiRfresh(aiRnet, rows = NULL, n, method.propigate = "fast")
 }
 \arguments{
 \item{aiRnet}{aiRnet object}

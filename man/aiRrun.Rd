@@ -6,7 +6,8 @@
 \usage{
 aiRrun(data, var.classify, aiRnet, cycles = 100, train.method = "Sample",
   sample.size = 0.5, batch.size = "all", train.Factor = NULL,
-  test = FALSE, na.rm = TRUE, data.return = FALSE)
+  test = FALSE, na.rm = TRUE, data.return = FALSE,
+  method.propigate = "fast")
 }
 \arguments{
 \item{data}{Data frame that contains all named columns needed}
@@ -35,6 +36,8 @@ c("column.index/name","factor.level"). Can assign only column name or index but 
 \item{na.rm}{remove NAs, default set to TRUE. Function likely to fail with NAs}
 
 \item{data.return}{logical determines if data should be returned to the user. Default set to FALSE}
+
+\item{method.propigate}{"fast" or "slow", how quickly you want to go through propigation step.}
 }
 \value{
 data frame of loss and the aiRnet of the training values. data set used is optional

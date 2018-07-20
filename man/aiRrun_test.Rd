@@ -5,7 +5,7 @@
 \title{aiRrun_test}
 \usage{
 aiRrun_test(data, index, n, class.levels, sample.rows, aiRnet, cycles = 100,
-  batch.size = "all", data.return = FALSE)
+  batch.size = "all", data.return = FALSE, method.propigate = "fast")
 }
 \arguments{
 \item{data}{Data frame that contains all named columns needed}
@@ -26,6 +26,8 @@ aiRrun_test(data, index, n, class.levels, sample.rows, aiRnet, cycles = 100,
 for no batches to be made.}
 
 \item{data.return}{logical determines if data should be returned to the user. Default set to FALSE}
+
+\item{method.propigate}{"fast" or "slow", how quickly you want to go through propigation step.}
 }
 \value{
 loss, aiRnet, traing.data and test.data

@@ -4,7 +4,7 @@
 \alias{aiRrowdelta}
 \title{aiRrowdelta}
 \usage{
-aiRrowdelta(loss.prop, total.loss, aiRnet, n)
+aiRrowdelta(loss.prop, total.loss, aiRnet, n, method.propigate)
 }
 \arguments{
 \item{loss.prop}{generated from aiRloss}
