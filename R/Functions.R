@@ -322,7 +322,6 @@ aiRrun_train <- function(data,
                             aiRnet = aiRnet,
                             n = n,
                             method.propigate = method.propigate)
-      aiRnet <- aiRfresh(aiRnet, rows = , n = n)
   }
 
   if(data.return) {
@@ -834,7 +833,9 @@ aiRactivation <- function(data, aiRnet, range.size =1000) {
 neg.exp <- function(x, power = 2) {
   .t <- x<0
   x <- x^(power)
-  x[.t] <- -1*x[.t]
+  if(sum(.t)>0){
+    x[.t] <- -1*x[.t]
+  }
   return(x)
 }
 
