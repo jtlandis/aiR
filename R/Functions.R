@@ -295,6 +295,8 @@ aiRrun_train <- function(data,
     } else {
       stop("batch.size must be a numeric integer or left on default \"all\".")
     }
+    print(k)
+    if(k==242){browser()}
     train.loss <- aiRloss(data = aiRtransform(data = data.train[,-index],
                                               aiRnet = aiRnet),
                           class.levels = class.levels,
@@ -833,9 +835,7 @@ aiRactivation <- function(data, aiRnet, range.size =1000) {
 neg.exp <- function(x, power = 2) {
   .t <- x<0
   x <- x^(power)
-  if(sum(.t)>0){
-    x[.t] <- -1*x[.t]
-  }
+  x[.t] <- -1*x[.t]
   return(x)
 }
 
