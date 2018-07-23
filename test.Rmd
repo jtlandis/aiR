@@ -112,8 +112,8 @@ ggplot(data = loss.aiR$loss,aes(x = iteration)) +
 ```
 
 ```{r}
-new <- aiRactivation(data = train[,-3], aiRnet = loss.aiR$aiRnet.last, range.size = 10000)
-
+new <- aiRactivation(data = train[,-3], aiRnet = loss.aiR$aiRnet, range.size = 10000)
+classify_obj <- aiRclassify(data = new$data_model, factor = levels(train$group), aiRnet = loss.aiR$aiRnet)
 ```
 
 ```{r}
@@ -122,7 +122,7 @@ ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
 ```
 
 ```{r}
-aiRrate(data = train, factor = "group", layers = loss.aiR$layers)
+aiRrate(data = train, factor = "group", aiRnet = loss.aiR$aiRnet)
 ```
 
 ```{r}
@@ -149,9 +149,7 @@ ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
 ```
 
 
-```{r}
-classify_obj <- aiRclassify(data = new$data_model, factor = levels(train$group), aiRnet = loss.aiR$aiRnet.last)
-```
+
 
 ```{r}
 ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
@@ -159,7 +157,7 @@ ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
 ```
 
 ```{r}
-aiRrate(data = train, factor = "group", aiRnet = loss.aiR$aiRnet.last)
+aiRrate(data = train, factor = "group", aiRnet = loss.aiR$aiRnet)
 ```
 
 
