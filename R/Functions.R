@@ -644,6 +644,7 @@ aiRtransform <- function(data, aiRnet, n = NULL) {
     data <- mat.opperation(x = data, y = aiRnet[[i]]$bias, opperation = "+")
     data <- sigmoid(data)
   }
+  data <- apply(data,2,zero)
   return(data)
 }
 
@@ -679,6 +680,24 @@ mat.opperation <- function(x,y, opperation){
   }
   return(mat)
 }
+
+#' @name zero
+#'
+#' @description Numbers under threshold are assigned numeric zero. Threshold default equals 0.00001
+#'
+#' @title zero
+#'
+#' @param x numeric vector to turn to zero
+#' @param power the power associated. default = -5
+#' @param base Base of the exponent. default = 10
+#' @param coef coefficent of the power and base. default = 1
+#'
+#' @export
+zero <- function(x, power = -5, base = 10, coef = 1){
+  for(i in 1:length(x)) {if(abs(x[i])<(coef*(base^(power)))){x[i] <- 0}}
+  return(x)
+}
+
 
 #' @name aiRrowdelta
 #'
