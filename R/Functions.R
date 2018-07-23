@@ -295,7 +295,6 @@ aiRrun_train <- function(data,
     } else {
       stop("batch.size must be a numeric integer or left on default \"all\".")
     }
-
     train.loss <- aiRloss(data = aiRtransform(data = data.train[,-index],
                                               aiRnet = aiRnet),
                           class.levels = class.levels,
