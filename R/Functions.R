@@ -150,7 +150,8 @@ aiRrun <- function(data,
                         aiRnet = aiRnet,
                         cycles = cycles,
                         batch.size= batch.size,
-                        method.propigate = method.propigate)
+                        method.propigate = method.propigate,
+                        data.return = data.return)
   } else {
     if(nrow(data)==sum(sample.rows)) {
       warning("All rows of data are used in training set. No test data will be returned.")
@@ -162,7 +163,8 @@ aiRrun <- function(data,
                           aiRnet = aiRnet,
                           cycles = cycles,
                           batch.size= batch.size,
-                          method.propigate = method.propigate)
+                          method.propigate = method.propigate,
+                          data.return = data.return)
     } else {
       aiR <- aiRrun_test(data = data,
                          index = index,
@@ -172,7 +174,8 @@ aiRrun <- function(data,
                          aiRnet = aiRnet,
                          cycles = cycles,
                          batch.size= batch.size,  #slightly longer compute time, calculates training loss
-                         method.propigate = method.propigate)
+                         method.propigate = method.propigate,
+                         data.return = data.return)
     }
   }
   return(aiR)
