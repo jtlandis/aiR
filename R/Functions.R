@@ -280,13 +280,13 @@ aiRrun_train <- function(data,
     if(is.numeric(batch.size)) {
       if(k%%nbatch==1) {
         batches <- aiRbatch(data = data.train.save, batch.size = batch.size)
-        data.train <- batches[[1]]
+        data.train <- data.train.save[batches[[1]],]
         classify.train <- data.train[,index]
       } else {
         if(k%%nbatch==0) {
-          data.train <- batches[[nbatch]]
+          data.train <- data.train.save[batches[[nbatch]],]
         } else {
-          data.train <- batches[[k%%nbatch]]
+          data.train <- data.train.save[batches[[k%%nbatch]],]
         }
         classify.train <- data.train[,index]
       }
@@ -505,11 +505,12 @@ aiRbatch <- function(data, batch.size) {
   n.batch <- floor(n/(batch.size))
   batches <- vector("list",n.batch)
   batch.names <- paste("batch.",seq(1:n.batch),sep = "")
+  rows <- seq(1:n)
+  rows.work <- rows
   for(i in 1:n.batch) {
-    rows <- seq(1:nrow(data))
-    sample.row <- sample(x = rows,size = batch.size)
-    batches[[i]] <- data[sample.row,]
-    data <- data[-sample.row,]
+    sample.row <- sample(x = rows.work,size = batch.size)
+    batches[[i]] <- sample.row %in% rows
+    rows.work <- rows.work[!sample.row]
   }
   names(batches) <- batch.names
   return(batches)
