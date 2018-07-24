@@ -295,7 +295,7 @@ aiRrun_train <- function(data,
     } else {
       stop("batch.size must be a numeric integer or left on default \"all\".")
     }
-    print(k)
+    #print(k)
     #if(k==194){browser()}
     train.loss <- aiRloss(data = aiRtransform(data = data.train[,-index],
                                               aiRnet = aiRnet),
@@ -500,7 +500,6 @@ aiRrun_test <- function(data,
 #'
 #' @return a list of data.frames containing random samples of input data.
 aiRbatch <- function(n, batch.size) {
-
   n.batch <- floor(n/(batch.size))
   batches <- vector("list",n.batch)
   batch.names <- paste("batch.",seq(1:n.batch),sep = "")
@@ -508,8 +507,8 @@ aiRbatch <- function(n, batch.size) {
   rows.work <- rows
   for(i in 1:n.batch) {
     sample.row <- sample(x = rows.work,size = batch.size)
-    batches[[i]] <- sample.row %in% rows
-    rows.work <- rows.work[!sample.row]
+    batches[[i]] <- rows %in% sample.row
+    rows.work <- rows.work[!(rows.work %in% sample.row)]
   }
   names(batches) <- batch.names
   return(batches)
@@ -645,7 +644,7 @@ aiRtransform <- function(data, aiRnet, n = NULL) {
     data <- mat.opperation(x = data, y = aiRnet[[i]]$bias, opperation = "+")
     data <- sigmoid(data)
   }
-  data <- apply(data,2,zero)
+  #data <- apply(data,2,zero)
   return(data)
 }
 
