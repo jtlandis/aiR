@@ -296,7 +296,7 @@ aiRrun_train <- function(data,
       stop("batch.size must be a numeric integer or left on default \"all\".")
     }
     print(k)
-    if(k==242){browser()}
+    #if(k==194){browser()}
     train.loss <- aiRloss(data = aiRtransform(data = data.train[,-index],
                                               aiRnet = aiRnet),
                           class.levels = class.levels,
@@ -722,6 +722,7 @@ aiRrowdelta <- function(loss.prop,
     #g <- nrow(loss.prop)
     row.work <- apply(loss.prop,2,mean)
     additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
+    additional.c[is.nan(additional.c)] <- 0
     #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
     row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
     for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
