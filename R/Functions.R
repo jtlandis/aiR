@@ -279,7 +279,7 @@ aiRrun_train <- function(data,
   for(k in 1:cycles) {
     if(is.numeric(batch.size)) {
       if(k%%nbatch==1) {
-        batches <- aiRbatch(data = data.train.save, batch.size = batch.size)
+        batches <- aiRbatch(n = nrow(data.train.save), batch.size = batch.size)
         data.train <- data.train.save[batches[[1]],]
         classify.train <- data.train[,index]
       } else {
@@ -403,14 +403,14 @@ aiRrun_test <- function(data,
   for(k in 1:cycles) {
     if(is.numeric(batch.size)) {
       if(k%%nbatch==1) {
-        batches <- aiRbatch(data = data.train.save, batch.size = batch.size)
-        data.train <- batches[[1]]
+        batches <- aiRbatch(n = nrow(data.train.save), batch.size = batch.size)
+        data.train <- data.train.save[batches[[1]],]
         classify.train <- data.train[,index]
       } else {
         if(k%%nbatch==0) {
-          data.train <- batches[[nbatch]]
+          data.train <- data.train.save[batches[[nbatch]],]
         } else {
-          data.train <- batches[[k%%nbatch]]
+          data.train <- data.train.save[batches[[k%%nbatch]],]
         }
         classify.train <- data.train[,index]
       }
@@ -499,9 +499,8 @@ aiRrun_test <- function(data,
 #' @param batch.size how many observations are used per batch
 #'
 #' @return a list of data.frames containing random samples of input data.
-aiRbatch <- function(data, batch.size) {
+aiRbatch <- function(n, batch.size) {
 
-  n <- nrow(data)
   n.batch <- floor(n/(batch.size))
   batches <- vector("list",n.batch)
   batch.names <- paste("batch.",seq(1:n.batch),sep = "")
