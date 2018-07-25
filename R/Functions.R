@@ -78,6 +78,35 @@ aiRnet <- function(nodes) {
 #' @export
 is.aiRnet <- function(x) inherits(x, "aiRnet")
 
+#' @name aiRhidden
+#'
+#' @title aiRhidden
+#'
+#' @description Builds a network of aiRlayers objects with random weight and bias as a list
+#'
+#' @param ... takes aiRnet objects as inputs and creats a list as aiRhidden
+#'
+#' @return generates aiRhidden from aiRnet objects passed
+#'
+#' @export
+aiRhidden <- function(...) {
+  hidden_list <- list(...)
+  names(hidden_list) <- paste("h",seq(1:length(hidden_list)),sep = "")
+  class(hidden_list) <- "aiRhidden"
+  return(hidden_list)
+}
+
+#' @name is.aiRhidden
+#'
+#' @title is.aiRhidden
+#'
+#' @param x object
+#'
+#' @return logical value
+#'
+#' @export
+is.aiRhidden <- function(x) inherits(x, "aiRhidden")
+
 #' @name aiRrun
 #'
 #' @title aiRrun
@@ -643,12 +672,72 @@ aiRtransform <- function(data, aiRnet, n = NULL) {
     n <- length(aiRnet)
   }
   for(i in 1:n) {   #Transform data through aiRnet
-    data <- as.matrix(data )%*%aiRnet[[i]]$weights
-    data <- mat.opperation(x = data, y = aiRnet[[i]]$bias, opperation = "+")
-    data <- sigmoid(data)
+    data <- aiRlayer_trans(data = data, aiRlayer = aiRnet[[i]])
   }
   #data <- apply(data,2,zero)
   return(data)
+}
+
+#' @name aiRlayer_trans
+#'
+#' @title aiRlayer_trans
+#'
+#' @param data data of input values
+#' @param aiRlayer takes either an aiRlayer, aiRnet, or aiRhidden object
+#'
+#' @return returns aiRnet output of data
+#'
+#' @export
+aiRlayer_trans <- function(data, aiRlayer) {UseMethod("aiRlayer_trans",aiRlayer)}
+
+#' @name aiRlayer_trans.aiRlayer
+#' 
+#' @description aiRlayer_trans method for aiRlayer objects
+#'
+#' @title aiRlayer_trans.aiRlayer
+#'
+#' @param data data of input values
+#' @param aiRlayer takes either an aiRlayer, aiRnet, or aiRhidden object
+#'
+#' @return returns aiRnet output of data
+#'
+#' @export
+aiRlayer_trans.aiRlayer <- function(data, aiRlayer) {
+  if(is.aiRlayer(aiRlayer)){
+    data <- as.matrix(data)%*%aiRlayer$weights
+    data <- mat.opperation(x = data, y = aiRlayer$bias, opperation = "+")
+    data <- sigmoid(data)
+    return(data)
+  } else {
+    stop("Error: not of class \"aiRlayer\"")
+  }
+}
+
+#maybe need aiRlayer_trans.aiRnet? ----
+
+#' @name aiRlayer_trans.aiRhidden
+#' 
+#' @description aiRlayer_trans method for aiRhidden objects
+#'
+#' @title aiRlayer_trans.aiRhidden
+#'
+#' @param data data of input values
+#' @param aiRlayer takes either an aiRlayer, aiRnet, or aiRhidden object
+#'
+#' @return returns aiRnet output of data
+#'
+#' @export
+aiRlayer_trans.aiRhidden <- function(data, aiRlayer) {
+  n <- length(aiRlayer)
+  a <- lapply(aiRlayer,aiRtransform,data = data)
+  paste.v <- vector("character",length(a))
+  for(i in 1:length(a)) {
+    paste.v[i] <- paste("n",i," = a[[",i,"]]",sep = "")
+  }
+  paste.v <- str_flatten(string = paste.v, collapse = ", ")
+  
+  hidden_return <- eval(parse(text = paste("data.frame(",paste.v,")",sep = "")))
+  return(hidden_return)
 }
 
 #' @name mat.opperation
@@ -719,7 +808,6 @@ aiRrowdelta <- function(loss.prop,
                         aiRnet,
                         n,
                         method.propigate) {
-
   if(method.propigate=="fast") {
     #g <- nrow(loss.prop)
     row.work <- apply(loss.prop,2,mean)
@@ -728,13 +816,10 @@ aiRrowdelta <- function(loss.prop,
     #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
     row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
     for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
-      w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
-      aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
-      b <- abs(aiRnet[[j]]$bias)*row.work
-      aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
-      new.loss <- apply(w,1,mean)
-      if(j!=1) {
-        row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+      working.list <- rowdelta(row.work = row.work, aiRlayer = aiRnet[[j]])
+      aiRnet[[j]] <- working.list[[2]]
+      if(j!=1){ 
+        row.work <- working.list[[1]]
       }
     }
     aiRnet <- aiRfresh(aiRnet = aiRnet,
@@ -744,12 +829,11 @@ aiRrowdelta <- function(loss.prop,
     for(i in 1:nrow(loss.prop)) {
       row.work <- sqrt(length(loss.prop[i,]))*loss.prop[i,]*(abs(loss.prop[i,]/(total.loss)))
       for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
-        w <- mat.opperation(x = abs(aiRnet[[j]]$weights), y = row.work, opperation = "*")
-        aiRnet[[j]]$change.w <- aiRnet[[j]]$change.w + w
-        b <- abs(aiRnet[[j]]$bias)*row.work
-        aiRnet[[j]]$change.b <- aiRnet[[j]]$change.b + b
-        new.loss <- apply(w,1,mean)
-        row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+        working.list <- rowdelta(row.work = row.work, aiRlayer = aiRnet[[j]])
+        aiRnet[[j]] <- working.list[[2]]
+        if(j!=1){ 
+          row.work <- working.list[[1]]
+        }
       }
     }
     aiRnet <- aiRfresh(aiRnet = aiRnet,
@@ -758,6 +842,88 @@ aiRrowdelta <- function(loss.prop,
                        method.propigate = method.propigate)
   }
   return(aiRnet)
+}
+
+#' @name rowdelta
+#'
+#' @title rowdelta
+#'
+#' @description back Propagation function
+#'
+#' @param row.work generated from aiRloss
+#' @param aiRlayer either aiRlayer, aiRnet, or aiRhidden object
+#'
+#' @return new aiRnet object
+rowdelta <- function(row.work, aiRlayer) {UseMethod("rowdelta", aiRlayer)} 
+
+#' @name rowdelta.aiRlayer
+#'
+#' @description rowdelta method for aiRlayer objects
+#' 
+#' @title rowdelta.aiRlayer
+#'
+#' @description back Propagation function
+#'
+#' @param row.work generated from aiRloss
+#' @param aiRlayer either aiRlayer, aiRnet, or aiRhidden object
+#'
+#' @return new aiRnet object
+rowdelta.aiRlayer <- function(row.work, aiRlayer) {
+  w <- mat.opperation(x = abs(aiRlayer$weights), y = row.work, opperation = "*")
+  aiRlayer$change.w <- aiRlayer$change.w + w
+  b <- abs(aiRlayer$bias)*row.work
+  aiRlayer$change.b <- aiRlayer$change.b + b
+  new.loss <- apply(w,1,mean)
+  row.work <- sqrt(length(new.loss))*new.loss*(abs(new.loss)/sum(abs(new.loss)))
+  list.return <- list(row.work,aiRlayer)
+  return(list.return)
+}
+#' @name rowdelta.aiRhidden
+#' 
+#' @description rowdelta method for aiRhidden objects
+#'
+#' @title rowdelta.aiRhidden
+#'
+#' @description back Propagation function
+#'
+#' @param row.work generated from aiRloss
+#' @param aiRlayer either aiRlayer, aiRnet, or aiRhidden object
+#'
+#' @return new aiRnet object
+rowdelta.aiRhidden <- function(row.work, aiRlayer) {
+  browser()
+  n <- length(aiRlayer)
+  .aiRseq <- seq(from = 2, to = 2*n, by = 2)
+  .rowseq <- seq(from = 1, to = 2*n, by = 2)
+  m.app <- mapply(rowdelta, row.work = row.work, aiRlayer = aiRlayer)
+  aiRlayer <- eval(parse(text = paste("list(",str_flatten(paste("m.app[[",.aiRseq,"]]", sep = ""), collapse = ", "),")", sep = "")))
+  row.work <- eval(parse(text = paste("rbind(",str_flatten(paste("m.app[[",.rowseq,"]]", sep = ""), collapse = ", "),")", sep = "")))
+  row.work <- apply(row.work,1,mean)
+  row.work <- sqrt(length(row.work))*row.work*(abs(row.work)/sum(abs(row.work)))
+  class(aiRlayer) <- "aiRhidden"
+  return(list(row.work,aiRlayer))
+}
+
+#' @name rowdelta.aiRnet
+#' 
+#' @description rowdelta method for aiRnet objects
+#'
+#' @title rowdelta.aiRnet
+#'
+#' @description back Propagation function
+#'
+#' @param row.work generated from aiRloss
+#' @param aiRlayer either aiRlayer, aiRnet, or aiRhidden object
+#'
+#' @return new aiRnet object
+rowdelta.aiRnet <- function(row.work, aiRlayer) { 
+  n <- length(aiRlayer)
+  for(j in n:1) {
+    working.list <- rowdelta(row.work = row.work, aiRlayer = aiRlayer[[j]])
+    aiRlayer[[j]] <- working.list[[2]]
+    row.work <- working.list[[1]]
+  }
+  return(list(row.work,aiRlayer))
 }
 
 #' @name aiRfresh
@@ -770,25 +936,88 @@ aiRrowdelta <- function(loss.prop,
 #'
 #' @return returns aiRnet object with change.w and change.b added
 #' to weights and bias respectively
-aiRfresh <- function(aiRnet, rows = NULL, n, method.propigate = "fast") {
-  if(method.propigate=="fast") {
+aiRfresh <- function(aiRnet, rows = NULL, n, method.propigate = "fast") { 
     for(i in 1:n) {
-      aiRnet[[i]]$weights <- aiRnet[[i]]$weights + aiRnet[[i]]$change.w
-      aiRnet[[i]]$bias <- aiRnet[[i]]$bias + aiRnet[[i]]$change.b
-      aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w*0
-      aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b*0
+      aiRnet[[i]] <- fresh(aiRlayer = aiRnet[[i]], rows = rows, method.propigate = method.propigate)
     }
-  } else if(method.propigate=="slow"){
-    for(i in 1:n) {
-      aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w/rows
-      aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b/rows
-      aiRnet[[i]]$weights <- aiRnet[[i]]$weights + aiRnet[[i]]$change.w
-      aiRnet[[i]]$bias <- aiRnet[[i]]$bias + aiRnet[[i]]$change.b
-      aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w*0
-      aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b*0
-    }
-  }
   return(aiRnet)
+}
+
+#' @name fresh
+#'
+#' @title fresh
+#'
+#' @param aiRlayer aiRlayer, aiRnet, or aiRhidden object
+#' @param rows number of rows in a batch
+#'
+#' @return returns aiRnet object with change.w and change.b added
+#' to weights and bias respectively
+fresh <- function(aiRlayer, rows = NULL, method.propigate = "fast") {UseMethod("fresh", aiRlayer)}
+
+#' @name fresh.aiRlayer
+#' 
+#' @description fresh method for aiRlayer objects
+#'
+#' @title fresh.aiRlayer
+#'
+#' @param aiRlayer aiRlayer, aiRnet, or aiRhidden object
+#' @param rows number of rows in a batch
+#'
+#' @return returns aiRnet object with change.w and change.b added
+#' to weights and bias respectively
+fresh.aiRlayer <- function(aiRlayer, rows = NULL, method.propigate = "fast") {
+  if(method.propigate=="fast") {
+      aiRlayer$weights <- aiRlayer$weights + aiRlayer$change.w
+      aiRlayer$bias <- aiRlayer$bias + aiRlayer$change.b
+      aiRlayer$change.w <- aiRlayer$change.w*0
+      aiRlayer$change.b <- aiRlayer$change.b*0
+  } else if(method.propigate=="slow"){
+      aiRlayer$change.w <- aiRlayer$change.w/rows
+      aiRlayer$change.b <- aiRlayer$change.b/rows
+      aiRlayer$weights <- aiRlayer$weights + aiRlayer$change.w
+      aiRlayer$bias <- aiRlayer$bias + aiRlayer$change.b
+      aiRlayer$change.w <- aiRlayer$change.w*0
+      aiRlayer$change.b <- aiRlayer$change.b*0
+  }
+  return(aiRlayer)
+}
+
+#' @name fresh.aiRnet
+#' 
+#' @description fresh method for aiRnet objects
+#'
+#' @title fresh.aiRnet
+#'
+#' @param aiRlayer aiRlayer, aiRnet, or aiRhidden object
+#' @param rows number of rows in a batch
+#'
+#' @return returns aiRnet object with change.w and change.b added
+#' to weights and bias respectively
+fresh.aiRnet <- function(aiRlayer, rows = NULL, method.propigate = "fast") {
+  n <- length(aiRlayer)
+  for(i in 1:n) {
+    aiRlayer[[i]] <- fresh(aiRlayer = aiRlayer[[i]], rows = rows, method.propigate = method.propigate)
+  }
+  return(aiRlayer)
+}
+
+#' @name fresh.aiRhidden
+#' 
+#' @description fresh method for aiRhidden objects
+#'
+#' @title fresh.aiRhidden
+#'
+#' @param aiRlayer aiRlayer, aiRnet, or aiRhidden object
+#' @param rows number of rows in a batch
+#'
+#' @return returns aiRnet object with change.w and change.b added
+#' to weights and bias respectively
+fresh.aiRhidden <- function(aiRlayer, rows = NULL, method.propigate = "fast") {
+  n <- length(aiRlayer)
+  for(i in 1:n) {
+    aiRlayer[[i]] <- fresh(aiRlayer = aiRlayer[[i]], rows = rows, method.propigate = method.propigate)
+  }
+  return(aiRlayer)
 }
 
 #' @name aiRactivation
