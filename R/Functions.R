@@ -891,7 +891,6 @@ rowdelta.aiRlayer <- function(row.work, aiRlayer) {
 #'
 #' @return new aiRnet object
 rowdelta.aiRhidden <- function(row.work, aiRlayer) {
-  browser()
   n <- length(aiRlayer)
   .aiRseq <- seq(from = 2, to = 2*n, by = 2)
   .rowseq <- seq(from = 1, to = 2*n, by = 2)
