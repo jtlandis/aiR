@@ -292,6 +292,7 @@ aiRrun_train <- function(data,
       }
     } else if(batch.size=="all") {
       data.train <- data.train.save
+      batch.size <- nrow(data.train)
     } else {
       stop("batch.size must be a numeric integer or left on default \"all\".")
     }
@@ -318,7 +319,7 @@ aiRrun_train <- function(data,
 
       loss$train.error[k] <- train.rate$MeanError
       loss$train.fails[k] <- train.rate$failed.instances
-      loss$train[k] <- train.loss$total.loss
+      loss$train[k] <- train.loss$total.loss/batch.size
       aiRnet <- aiRrowdelta(loss.prop = train.loss$loss.prop,
                             total.loss = train.loss$total.loss,
                             aiRnet = aiRnet,
@@ -390,6 +391,7 @@ aiRrun_test <- function(data,
   data.train <- data[sample.rows,]
   data.train.save <- data.train
   data.test <-  data[!sample.rows,]
+  test.batch.size <- nrow(data.test)
 
   loss <- data.frame(train = rep(NA,cycles),train.error = rep(NA,cycles), train.fails = rep(NA,cycles), test = rep(NA,cycles), test.error = rep(NA,cycles), test.fails = rep(NA,cycles))
   rownames(loss) <- as.character(seq(1,cycles))
@@ -416,6 +418,7 @@ aiRrun_test <- function(data,
       }
     } else if(batch.size=="all") {
       data.train <- data.train.save
+      batch.size <- nrow(data.train)
     } else {
       stop("batch.size must be a numeric integer or left on default \"all\".")
     }
@@ -437,7 +440,7 @@ aiRrun_test <- function(data,
       train.loss.save <- train.loss
       aiRnet.save <- aiRnet
     }
-      loss$train[k] <- train.loss$total.loss
+      loss$train[k] <- train.loss$total.loss/batch.size
       train.rate <- aiRrate(data = data.train,
                             factor = index,
                             aiRnet = aiRnet,
@@ -445,7 +448,7 @@ aiRrun_test <- function(data,
                             warning = warning)
       loss$train.error[k] <- train.rate$MeanError
       loss$train.fails[k] <- train.rate$failed.instances
-      loss$test[k] <- test.loss$total.loss
+      loss$test[k] <- test.loss$total.loss/test.batch.size
       test.rate <- aiRrate(data = data.test,
                            factor = index,
                            aiRnet = aiRnet,
