@@ -4,7 +4,8 @@
 \alias{zero}
 \title{zero}
 \usage{
-zero(x, power = -5, base = 10, coef = 1)
+zero(x, power = -5, base = 10, coef = 1, replace = 0,
+  inequal = "lesser")
 }
 \arguments{
 \item{x}{numeric vector to turn to zero}
@@ -14,6 +15,10 @@ zero(x, power = -5, base = 10, coef = 1)
 \item{base}{Base of the exponent. default = 10}
 
 \item{coef}{coefficent of the power and base. default = 1}
+
+\item{replace}{number to replace value by}
+
+\item{inequal}{set to either lesser or greater, default = "lesser"}
 }
 \description{
 Numbers under threshold are assigned numeric zero. Threshold default equals 0.00001

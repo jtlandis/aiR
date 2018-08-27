@@ -28,8 +28,9 @@ aiRlayer <- function(dim1,dim2) {
   change.w <- matrix(0, nrow = dim1, ncol = dim2)
   bias <- runif(n = dim2, min = -5, max = 5)
   change.b <- rep(0, dim2)
-  layer <- list(weights, bias, change.w, change.b)
-  names(layer) <- c("weights","bias","change.w","change.b")
+  mean.node <- rep(0, dim2)
+  layer <- list(weights, bias, change.w, change.b, mean.node)
+  names(layer) <- c("weights","bias","change.w","change.b", "mean.node")
   class(layer) <- "aiRlayer"
   return(layer)
 
@@ -326,9 +327,11 @@ aiRrun_train <- function(data,
       stop("batch.size must be a numeric integer or left on default \"all\".")
     }
     #print(k)
-    #if(k==194){browser()}
-    train.loss <- aiRloss(data = aiRtransform(data = data.train[,-index],
-                                              aiRnet = aiRnet),
+    #if(k==1){browser()}
+    output <- aiRtransform(data = data.train[,-index],
+                 aiRnet = aiRnet)
+    aiRnet <- output[[2]]
+    train.loss <- aiRloss(data = output[[1]],
                           class.levels = class.levels,
                           classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
     if(k==1){
@@ -354,6 +357,11 @@ aiRrun_train <- function(data,
                             aiRnet = aiRnet,
                             n = n,
                             method.propigate = method.propigate)
+      # for(c in 1:n){
+      #   dim <- dim(aiRnet[[c]]$weights)
+      #   aiRnet[[c]]$weights <- matrix(mapply(zero, aiRnet[[c]]$weights, power = 10, inequal = "greater", replace = runif(dim[1]*dim[2],min = -2,max = 2)), nrow = dim[1], ncol = dim[2])
+      #   aiRnet[[c]]$bias <- mapply(zero, aiRnet[[c]]$bias, power = 10, inequal = "greater", replace = runif(dim[2],min = -2,max = 2))
+      # }
   }
 
   if(data.return) {
@@ -379,8 +387,6 @@ aiRrun_train <- function(data,
       class(aiR$aiRnet.best) <- "aiRnet"
     }
   }
-
-
   return(aiR)
 }
 
@@ -457,8 +463,10 @@ aiRrun_test <- function(data,
     } else if((loss$train.fails[k-1]!=0)) {
       warning <- FALSE
     }
-    train.loss <- aiRloss(data = aiRtransform(data = data.train[,-index],
-                                              aiRnet = aiRnet),
+    output <- aiRtransform(data = data.train[,-index],
+                           aiRnet = aiRnet)
+    aiRnet <- output[[2]]
+    train.loss <- aiRloss(data = output[[1]],
                           class.levels = class.levels,
                           classify = classify.train) #squared loss, directional (negative used) loss shows direction it should move.
     test.loss <- aiRloss(data = aiRtransform(data = data.test[,-index],
@@ -565,8 +573,9 @@ aiRbatch <- function(n, batch.size) {
 aiRloss <- function(data, class.levels, classify) {
   class.mat <- diag(nrow = length(class.levels),ncol = length(class.levels))
   correct <- class.mat[classify,]
-  loss.prop <- (apply((correct - data),2,neg.exp)) #squared loss, directional (negative used) loss shows direction it should move.
-  row.loss <- apply(abs(loss.prop),1,sum)
+  loss.prop <- data-correct
+  #loss.prop <- (apply((correct - data),2,neg.exp)) #squared loss, directional (negative used) loss shows direction it should move.
+  row.loss <- apply(.5*(loss.prop*loss.prop),1,sum)
   total.loss <- sum(row.loss)
   loss <- list(loss.prop, row.loss, total.loss)
   names(loss) <- c("loss.prop","row.loss","total.loss")
@@ -634,7 +643,7 @@ aiRclassify <- function(data, factor, aiRnet, warning = TRUE) {
   if(!is.aiRnet(aiRnet)){
     stop("aiRnet must be of class \"aiRnet\"")
   }
-  trans <- aiRtransform(data = data, aiRnet = aiRnet)
+  trans <- aiRtransform(data = data, aiRnet = aiRnet)[[1]]
   node.max <- apply(trans, 1, max)
   indexes <- apply(trans==node.max, 1, which)
   if(class(indexes)=="list") {
@@ -672,10 +681,12 @@ aiRtransform <- function(data, aiRnet, n = NULL) {
     n <- length(aiRnet)
   }
   for(i in 1:n) {   #Transform data through aiRnet
-    data <- aiRlayer_trans(data = data, aiRlayer = aiRnet[[i]])
+    trans.out <- aiRlayer_trans(data = data, aiRlayer = aiRnet[[i]])
+    data <- trans.out[[1]]
+    aiRnet[[i]] <- trans.out[[2]]
   }
   #data <- apply(data,2,zero)
-  return(data)
+  return(list(data,aiRnet))
 }
 
 #' @name aiRlayer_trans
@@ -707,7 +718,8 @@ aiRlayer_trans.aiRlayer <- function(data, aiRlayer) {
     data <- as.matrix(data)%*%aiRlayer$weights
     data <- mat.opperation(x = data, y = aiRlayer$bias, opperation = "+")
     data <- sigmoid(data)
-    return(data)
+    aiRlayer$mean.node <- apply(data,2,mean)
+    return(list(data,aiRlayer))
   } else {
     stop("Error: not of class \"aiRlayer\"")
   }
@@ -730,14 +742,18 @@ aiRlayer_trans.aiRlayer <- function(data, aiRlayer) {
 aiRlayer_trans.aiRhidden <- function(data, aiRlayer) {
   n <- length(aiRlayer)
   a <- lapply(aiRlayer,aiRtransform,data = data)
-  paste.v <- vector("character",length(a))
-  for(i in 1:length(a)) {
-    paste.v[i] <- paste("n",i," = a[[",i,"]]",sep = "")
+  a.data <- lapply(a,getlayer,layer=1)
+  a.layers <- lapply(a,getlayer,layer=2)
+  paste.v <- vector("character",length(a.data))
+  for(i in 1:length(a.data)) {
+    paste.v[i] <- paste("n",i," = a.data[[",i,"]]",sep = "")
+    aiRlayer[[i]] <- a.layers[[i]]
   }
+  browser()
   paste.v <- str_flatten(string = paste.v, collapse = ", ")
   
   hidden_return <- eval(parse(text = paste("data.frame(",paste.v,")",sep = "")))
-  return(hidden_return)
+  return(list(hidden_return,aiRlayer))
 }
 
 #' @name mat.opperation
@@ -783,10 +799,19 @@ mat.opperation <- function(x,y, opperation){
 #' @param power the power associated. default = -5
 #' @param base Base of the exponent. default = 10
 #' @param coef coefficent of the power and base. default = 1
+#' @param replace number to replace value by
+#' @param inequal set to either lesser or greater, default = "lesser"
 #'
 #' @export
-zero <- function(x, power = -5, base = 10, coef = 1){
-  for(i in 1:length(x)) {if(abs(x[i])<(coef*(base^(power)))){x[i] <- 0}}
+zero <- function(x, power = -5, base = 10, coef = 1, replace = 0, inequal = "lesser"){
+  if(!is.element(inequal, c("lesser","greater"))){
+    stop("inequal must be either \"lesser\" or \"greater\"")
+  }
+  if(inequal=="lesser") {
+    for(i in 1:length(x)) {if(abs(x[i])<(coef*(base^(power)))){x[i] <- replace}}
+  } else {
+    for(i in 1:length(x)) {if(abs(x[i])>(coef*(base^(power)))){x[i] <- replace}}
+  }
   return(x)
 }
 
@@ -809,19 +834,20 @@ aiRrowdelta <- function(loss.prop,
                         n,
                         method.propigate) {
   if(method.propigate=="fast") {
-    #g <- nrow(loss.prop)
-    row.work <- apply(loss.prop,2,mean)
-    additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
-    additional.c[is.nan(additional.c)] <- 0
-    #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
-    row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
-    for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
-      working.list <- rowdelta(row.work = row.work, aiRlayer = aiRnet[[j]])
-      aiRnet[[j]] <- working.list[[2]]
-      if(j!=1){ 
-        row.work <- working.list[[1]]
-      }
-    }
+    # #g <- nrow(loss.prop)
+    # row.work <- apply(loss.prop,2,mean)
+    # additional.c <- apply(loss.prop*abs(loss.prop),2,mean)/((apply(loss.prop,2,mean)*abs(apply(loss.prop,2,mean))))
+    # additional.c[is.nan(additional.c)] <- 0
+    # #row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
+    # row.work <- additional.c*sqrt(length(row.work))*row.work*(abs(row.work/(total.loss)))
+    # for(j in n:1) { #use back propigation... record desired changes for each input to each node... record in $change.w $change.b
+    #   working.list <- rowdelta(row.work = row.work, aiRlayer = aiRnet[[j]])
+    #   aiRnet[[j]] <- working.list[[2]]
+    #   if(j!=1){ 
+    #     row.work <- working.list[[1]]
+    #   }
+    # }
+    aiRnet <- first(loss = apply(loss.prop,2,mean),aiRnet = aiRnet,rate = 1)
     aiRnet <- aiRfresh(aiRnet = aiRnet,
                        n = n,
                        method.propigate = method.propigate)
@@ -970,6 +996,7 @@ fresh.aiRlayer <- function(aiRlayer, rows = NULL, method.propigate = "fast") {
       aiRlayer$bias <- aiRlayer$bias + aiRlayer$change.b
       aiRlayer$change.w <- aiRlayer$change.w*0
       aiRlayer$change.b <- aiRlayer$change.b*0
+      aiRlayer$mean.node <- aiRlayer$mean.node*0
   } else if(method.propigate=="slow"){
       aiRlayer$change.w <- aiRlayer$change.w/rows
       aiRlayer$change.b <- aiRlayer$change.b/rows
@@ -977,6 +1004,7 @@ fresh.aiRlayer <- function(aiRlayer, rows = NULL, method.propigate = "fast") {
       aiRlayer$bias <- aiRlayer$bias + aiRlayer$change.b
       aiRlayer$change.w <- aiRlayer$change.w*0
       aiRlayer$change.b <- aiRlayer$change.b*0
+      aiRlayer$mean.node <- aiRlayer$mean.node*0
   }
   return(aiRlayer)
 }
