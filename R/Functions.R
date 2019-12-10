@@ -15,6 +15,10 @@ sigmoid <- function(x) {
   (1 / (1 + exp(-x)))
 }
 
+dsigmoid <- function(x){
+  sigmoid(x)*(1-sigmoid(x))
+}
+
 #' @name aiRlayer
 #'
 #' @title aiRlayer
@@ -534,7 +538,7 @@ aiRbatch <- function(data, batch.size) {
 #' total.loss: the total loss for a batch of examples.
 #' @export
 aiRloss <- function(data, class.levels, classify) {
-  #browser()
+  browser()
   class.mat <- diag(nrow = length(class.levels),ncol = length(class.levels))
   correct <- class.mat[classify,]
   loss.prop <- (apply((correct - data),2,neg.exp)) #squared loss, directional (negative used) loss shows direction it should move.
@@ -544,6 +548,58 @@ aiRloss <- function(data, class.levels, classify) {
   names(loss) <- c("loss.prop","row.loss","total.loss")
   class(loss) <- "aiRloss"
   return(loss)
+}
+
+aiRloss2 <- function(data, class.levels, classify) {
+  class.mat <- diag(nrow = length(class.levels),ncol = length(class.levels))
+  correct <- class.mat[classify,]
+  cost <- (data-correct)^2
+  dcost <- 2*(data-correct)
+  dsig <- dsigmoid(data)
+  obs.cost <- apply(cost,1,sum)
+  total.cost <- sum(obs.cost)
+  ret <- list(cost, dcost, dsig, obs.cost, total.cost)
+  names(ret) <- c("cost","dcost","dsig","obser.cost","total.cost")
+  class(ret) <- "aiRloss"
+  return(ret)
+}
+
+activation <- function(aiRnet, data) {
+  #browser()
+  if(!is.aiRnet(aiRnet)){
+    stop("aiRnet must be of class \"aiRnet\"")
+  }
+  n <- length(aiRnet)
+
+  l <- list(n)
+  for(i in 1:n) {   #Transform data through aiRnet
+    data <- as.matrix(data)%*%aiRnet[[i]]$weights
+    data <- mat.opperation(x = data, y = aiRnet[[i]]$bias, opperation = "+")
+    data <- sigmoid(data)
+    l[[i]] <- data
+  }
+  l[[n]] <- apply(l[[n]],2,zero)
+  return(l)
+
+}
+#making good progress
+#Need to get recursive part down and decide how to with accumelating sums...
+#after first iteration, what constitutes as a cost value?
+#reference: https://www.youtube.com/watch?v=tIeHLnjs5U8
+
+backprop <- function(aiRnet, aiRloss2, aiRactivation) {
+  browser()
+  n <- length(aiRactivation)
+  gencost <- aiRloss2$dcost*aiRloss2$dsig
+  cost.vec <- apply(gencost,1,sum)
+  start.adjust <- aiRactivation[[n-1]]*cost.vec
+  aiRnet[[n]]$change.w <- aiRnet[[n]]$weights*apply(start.adjust,2,mean) #ideally we wouldnt do the apply
+  aiRnet[[n]]$change.b <- cost.vec*aiRnet[[n]]$bias
+  if(n>1){
+    for(i in n-1:1){
+
+    }
+  }
 }
 
 #' @name aiRrate
