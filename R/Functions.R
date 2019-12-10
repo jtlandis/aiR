@@ -277,6 +277,7 @@ aiRrun_train <- function(data,
   }
 
   for(k in 1:cycles) {
+    #print(k)
     if(is.numeric(batch.size)) {
       if(k%%nbatch==1) {
         batches <- aiRbatch(data = data.train.save, batch.size = batch.size)
@@ -499,17 +500,18 @@ aiRrun_test <- function(data,
 #'
 #' @return a list of data.frames containing random samples of input data.
 aiRbatch <- function(data, batch.size) {
-
+#browser()
   n <- nrow(data)
   n.batch <- floor(n/(batch.size))
   batches <- vector("list",n.batch)
   batch.names <- paste("batch.",seq(1:n.batch),sep = "")
   rows <- seq(1:n)
   rows.work <- rows
+  available.rows <- !logical(n)
   for(i in 1:n.batch) {
-    sample.row <- sample(x = rows.work,size = batch.size)
-    batches[[i]] <- sample.row %in% rows
-    rows.work <- rows.work[!sample.row]
+    sample.row <- sample(x = rows.work[available.rows], size = batch.size)
+    batches[[i]] <- rows %in% sample.row
+    available.rows <- available.rows&!(rows %in% sample.row)
   }
   names(batches) <- batch.names
   return(batches)
@@ -532,6 +534,7 @@ aiRbatch <- function(data, batch.size) {
 #' total.loss: the total loss for a batch of examples.
 #' @export
 aiRloss <- function(data, class.levels, classify) {
+  #browser()
   class.mat <- diag(nrow = length(class.levels),ncol = length(class.levels))
   correct <- class.mat[classify,]
   loss.prop <- (apply((correct - data),2,neg.exp)) #squared loss, directional (negative used) loss shows direction it should move.
@@ -695,7 +698,8 @@ mat.opperation <- function(x,y, opperation){
 #'
 #' @export
 zero <- function(x, power = -5, base = 10, coef = 1){
-  for(i in 1:length(x)) {if(abs(x[i])<(coef*(base^(power)))){x[i] <- 0}}
+  val <- coef*(base^(power))
+  x <- ifelse(abs(x)<val,0,x)
   return(x)
 }
 
