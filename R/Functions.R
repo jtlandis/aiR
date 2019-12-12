@@ -2,85 +2,7 @@
 #' @import justinmisc
 #' @import stringr
 
-#' @name sigmoid
-#'
-#' @title sigmoid
-#'
-#' @param x numeric vector
-#'
-#' @return sigmoid value for each x
-#'
-#' @export
-sigmoid <- function(x) {
-  (1 / (1 + exp(-x)))
-}
 
-dsigmoid <- function(x){
-  sigmoid(x)*(1-sigmoid(x))
-}
-
-#' @name aiRlayer
-#'
-#' @title aiRlayer
-#'
-#' @param dim1 row dimensions
-#' @param dim2 column dimensions
-#'
-#' @return generates aiRlayer object of specified dimensions
-aiRlayer <- function(dim1,dim2) {
-  weights <- matrix(runif(n = dim1*dim2, min = -10, max = 10), nrow = dim1, ncol = dim2)
-  change.w <- matrix(0, nrow = dim1, ncol = dim2)
-  bias <- runif(n = dim2, min = -5, max = 5)
-  change.b <- rep(0, dim2)
-  layer <- list(weights, bias, change.w, change.b)
-  names(layer) <- c("weights","bias","change.w","change.b")
-  class(layer) <- "aiRlayer"
-  return(layer)
-
-}
-#' @name is.aiRlayer
-#'
-#' @title is.aiRlayer
-#'
-#' @param x object
-#'
-#' @return logical value
-#'
-#' @export
-is.aiRlayer <- function(x) inherits(x, "aiRlayer")
-
-#' @name aiRnet
-#'
-#' @title aiRnet
-#'
-#' @description Builds a network of aiRlayers objects with random weight and bias as a list
-#'
-#' @param nodes specifies how many nodes in each layer,
-#' first value should equal input values, last value should
-#' equal classification values
-#'
-#' @return generates aiRnet object of specified dimensions
-#'
-#' @export
-aiRnet <- function(nodes) {
-  n <- length(nodes)-1
-  aiR <- vector("list",n)
-  for(i in 1:n){
-    aiR[[i]] <- aiRlayer(nodes[i],nodes[i+1])
-  }
-  class(aiR) <- "aiRnet"
-  return(aiR)
-}
-#' @name is.aiRnet
-#'
-#' @title is.aiRnet
-#'
-#' @param x object
-#'
-#' @return logical value
-#'
-#' @export
-is.aiRnet <- function(x) inherits(x, "aiRnet")
 
 #' @name aiRrun
 #'
@@ -716,57 +638,6 @@ aiRtransform <- function(data, aiRnet, n = NULL) {
   return(data)
 }
 
-#' @name mat.opperation
-#'
-#' @title mat.opperation
-#'
-#' @description allows simple operations between matrix and constant vector. column size of x must equal length of y
-#'
-#' @param x matrix of column size m, row size n
-#' @param y vector of length m
-#' @param opperation opperation to use: +, -, *, /
-#'
-#' @return returns n by m matrix where values of y are done onto the columns of x.
-#'
-#' @export
-mat.opperation <- function(x,y, opperation){
-  type.opperation <- c("+","-","*","/")
-  if(!is.element(opperation, type.opperation)) {
-    stop("train.method must be \"+\" or \"-\" or \"*\" or \"/\"")
-  }
-  if(ncol(x)!=length(y)) {
-    stop("column of x must equal length of y.")
-  }
-  if(opperation=="+"){
-    mat <- sweep(x, 2, y, "+")
-  } else if(opperation=="-"){
-    mat <- sweep(x, 2, y, "-")
-  } else if(opperation=="*"){
-    mat <- sweep(x, 2, y, "*")
-  } else if(opperation=="/"){
-    mat <- sweep(x, 2, y, "/")
-  }
-  return(mat)
-}
-
-#' @name zero
-#'
-#' @description Numbers under threshold are assigned numeric zero. Threshold default equals 0.00001
-#'
-#' @title zero
-#'
-#' @param x numeric vector to turn to zero
-#' @param power the power associated. default = -5
-#' @param base Base of the exponent. default = 10
-#' @param coef coefficent of the power and base. default = 1
-#'
-#' @export
-zero <- function(x, power = -5, base = 10, coef = 1){
-  val <- coef*(base^(power))
-  x <- ifelse(abs(x)<val,0,x)
-  return(x)
-}
-
 
 #' @name aiRrowdelta
 #'
@@ -856,50 +727,6 @@ aiRfresh <- function(aiRnet, rows = NULL, n, method.propigate = "fast") {
   return(aiRnet)
 }
 
-aiRfresh2 <- function(aiRnet){
-  n <- length(aiRnet)
-  for(i in 1:n){
-    aiRnet[[i]]$weights <- aiRnet[[i]]$weights - aiRnet[[i]]$change.w
-    aiRnet[[i]]$bias <- aiRnet[[i]]$bias - aiRnet[[i]]$change.b
-    aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w*0
-    aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b*0
-  }
-  return(aiRnet)
-}
-
-aiRrun2 <- function(data, aiRnet, classif, cycles, batch.size){
-  #subdivide into batches
-  batches <- aiRbatch(data = data, batch.size = batch.size)
-  nb <- length(batches)
-  #browser()
-  tot.cost <- numeric(cycles)
-  aiRbest <- aiRnet
-  min.cost <- batch.size*ncol(data)
-  for(i in 1:cycles){
-    if(i%%nb==0){
-      b <- batches[[nb]]
-      batches <- aiRbatch(data = data, batch.size = batch.size)
-    } else {
-      b <- batches[[i%%nb]]
-    }
-    #find activation
-    aiRactiv <- activation(data = data[b,], aiRnet = aiRnet)
-    n <- length(aiRactiv)
-    # find cost
-    aiRloss <- aiRloss2(data = aiRactiv[[n]], class.levels = levels(classif), classify = classif[b])
-    tot.cost[i] <- aiRloss$total.cost
-    if(tot.cost[i]==min(tot.cost[i],min.cost)){
-      aiRbest <- aiRnet
-    }
-    newaiR <-  backprop(aiRnet = aiRnet, aiRloss2 = aiRloss, aiRactivation = aiRactiv)
-    aiRnet <- aiRfresh2(aiRnet = newaiR)
-  }
-  d <- data.frame(cycles = 1:cycles, cost = tot.cost)
-  #ggplot(data = NULL, aes(x = 1:cycles, y = tot.cost)) + geom_point()
-  ret <- list(aiRnet,aiRbest, aiRloss, d)
-  names(ret) <- c("aiRnet","aiRbest","aiRloss","Cost")
-  return(ret)
-}
 
 #' @name aiRactivation
 #'
