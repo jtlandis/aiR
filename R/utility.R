@@ -72,3 +72,84 @@ mat.opperation <- function(x,y, opperation){
   }
   return(mat)
 }
+
+
+
+#' @name aiRrate
+#'
+#' @title aiRrate
+#'
+#' @description reports error rate of network
+#'
+#' @param data data of input values
+#' @param factor character vector of factors to classify. levels must be in same order as
+#' levels presented in original data.
+#' @param aiRnet aiRnet object
+#' @param report.class report results from aiRclassify, Default set to FALSE
+#' @param warning Suppress warning from aiRclassify that multiple nodes are activated.
+#' Default set to TRUE. TRUE: allow warning. FALSE: Suppress warning
+#'
+#' @return error rate of aiRnet on data and how many activated non uniquely.
+#'
+#' @export
+aiRrate <- function(data, factor, aiRnet, report.class = FALSE, warning = TRUE) {
+  if(!is.aiRnet(aiRnet)){
+    stop("aiRnet must be of class \"aiRnet\"")
+  }
+  if(!is.element(report.class, c(TRUE,FALSE))){
+    stop("report.class must be logical, either: TRUE or FALSE")
+  }
+
+  class.save <- data[[factor]]
+  data <- data[,!colnames(data)%in%factor]
+  classify <- aiRclassify(data = data, factor = levels(class.save), aiRnet = aiRnet, warning = warning)
+  rate <- 1-(mean(class.save==classify$classify))
+  if(report.class) {
+    ret <- list(rate, classify$classify, classify$node.max, classify$failed.instances)
+    names(ret) <- c("MeanError","classify","node.max", "failed.instances")
+  } else {
+    ret <- list(rate, classify$failed.instances)
+    names(ret) <- c("MeanError","failed.instances")
+  }
+  return(ret)
+}
+
+#' @name aiRclassify
+#'
+#' @title aiRclassify
+#'
+#' @description classifies each observation by taking the max value of the last layer.
+#'
+#' @param data data of input values
+#' @param factor character vector of factors to classify. levels must be in same order as
+#' levels presented in original data.
+#' @param aiRnet aiRnet object
+#' @param warning Suppress warning from aiRclassify that multiple nodes are activated.
+#' Default set to TRUE. TRUE: allow warning. FALSE: Suppress warning
+#'
+#' @return returns a list of classification values for each
+#' observation along with its activation in the last layer.
+#'
+#' @export
+aiRclassify <- function(data, factor, aiRnet, warning = TRUE) {
+  if(!is.aiRnet(aiRnet)){
+    stop("aiRnet must be of class \"aiRnet\"")
+  }
+  trans <- aiRtransform(data = data, aiRnet = aiRnet)
+  node.max <- apply(trans, 1, max)
+  indexes <- apply(trans==node.max, 1, which)
+  if(class(indexes)=="list") {
+    if(warning) {
+      warning("for at least one observation, more than one node have the same max activation. More training advised.")
+    }
+    classify <- unlist(lapply(lapply(indexes,FUN = function(x, y = factor) {y[x]}),str_flatten))
+    fails <- sum(!classify %in% factor)
+  } else {
+    classify <- factor[indexes]
+    fails <- 0
+  }
+
+  ret <- list(classify, node.max, fails)
+  names(ret) <- c("classify","node.max", "failed.instances")
+  return(ret)
+}
