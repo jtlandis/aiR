@@ -504,7 +504,7 @@ aiRrun_test <- function(data,
 #'
 #' @return a list of data.frames containing random samples of input data.
 aiRbatch <- function(data, batch.size) {
-#browser()
+#
   n <- nrow(data)
   n.batch <- floor(n/(batch.size))
   batches <- vector("list",n.batch)
@@ -538,7 +538,7 @@ aiRbatch <- function(data, batch.size) {
 #' total.loss: the total loss for a batch of examples.
 #' @export
 aiRloss <- function(data, class.levels, classify) {
-  browser()
+
   class.mat <- diag(nrow = length(class.levels),ncol = length(class.levels))
   correct <- class.mat[classify,]
   loss.prop <- (apply((correct - data),2,neg.exp)) #squared loss, directional (negative used) loss shows direction it should move.
@@ -565,20 +565,21 @@ aiRloss2 <- function(data, class.levels, classify) {
 }
 
 activation <- function(aiRnet, data) {
-  #browser()
+  #
   if(!is.aiRnet(aiRnet)){
     stop("aiRnet must be of class \"aiRnet\"")
   }
   n <- length(aiRnet)
 
-  l <- list(n)
-  for(i in 1:n) {   #Transform data through aiRnet
-    data <- as.matrix(data)%*%aiRnet[[i]]$weights
-    data <- mat.opperation(x = data, y = aiRnet[[i]]$bias, opperation = "+")
+  l <- list(n+1)
+  l[[1]] <- data
+  for(i in 2:(n+1)) {   #Transform data through aiRnet
+    data <- as.matrix(data)%*%aiRnet[[i-1]]$weights
+    data <- mat.opperation(x = data, y = aiRnet[[i-1]]$bias, opperation = "+")
     data <- sigmoid(data)
     l[[i]] <- data
   }
-  l[[n]] <- apply(l[[n]],2,zero)
+  l[[n+1]] <- apply(l[[n+1]],2,zero)
   return(l)
 
 }
@@ -588,18 +589,25 @@ activation <- function(aiRnet, data) {
 #reference: https://www.youtube.com/watch?v=tIeHLnjs5U8
 
 backprop <- function(aiRnet, aiRloss2, aiRactivation) {
-  browser()
+  #
   n <- length(aiRactivation)
   gencost <- aiRloss2$dcost*aiRloss2$dsig
   cost.vec <- apply(gencost,1,sum)
+  #cost.vec <- cost.vec*scales::rescale(cost.vec, c(1,2))
   start.adjust <- aiRactivation[[n-1]]*cost.vec
-  aiRnet[[n]]$change.w <- aiRnet[[n]]$weights*apply(start.adjust,2,mean) #ideally we wouldnt do the apply
-  aiRnet[[n]]$change.b <- cost.vec*aiRnet[[n]]$bias
-  if(n>1){
-    for(i in n-1:1){
-
+  aiRnet[[n-1]]$change.w <- aiRnet[[n-1]]$weights*apply(start.adjust,2,sum) #ideally we wouldnt do the apply
+  aiRnet[[n-1]]$change.b <- sum(cost.vec)*aiRnet[[n-1]]$bias
+  if(n>2){
+    for(i in (n-1):2){
+      gencost2 <- start.adjust*sigmoid(aiRactivation[[i]])
+      cost.vec2 <- apply(gencost2,1,sum)
+      #cost.vec2 <- cost.vec*scales::rescale(cost.vec2, c(1,2))
+      start.adjust2 <- aiRactivation[[i-1]]*cost.vec2
+      aiRnet[[i-1]]$change.w <- aiRnet[[i-1]]$weights*apply(start.adjust2,2,sum) #ideally we wouldnt do the apply
+      aiRnet[[i-1]]$change.b <- sum(cost.vec2)*aiRnet[[i-1]]$bias
     }
   }
+  return(aiRnet)
 }
 
 #' @name aiRrate
@@ -700,7 +708,7 @@ aiRtransform <- function(data, aiRnet, n = NULL) {
     n <- length(aiRnet)
   }
   for(i in 1:n) {   #Transform data through aiRnet
-    data <- as.matrix(data )%*%aiRnet[[i]]$weights
+    data <- as.matrix(data)%*%aiRnet[[i]]$weights
     data <- mat.opperation(x = data, y = aiRnet[[i]]$bias, opperation = "+")
     data <- sigmoid(data)
   }
@@ -846,6 +854,51 @@ aiRfresh <- function(aiRnet, rows = NULL, n, method.propigate = "fast") {
     }
   }
   return(aiRnet)
+}
+
+aiRfresh2 <- function(aiRnet){
+  n <- length(aiRnet)
+  for(i in 1:n){
+    aiRnet[[i]]$weights <- aiRnet[[i]]$weights - aiRnet[[i]]$change.w
+    aiRnet[[i]]$bias <- aiRnet[[i]]$bias - aiRnet[[i]]$change.b
+    aiRnet[[i]]$change.w <- aiRnet[[i]]$change.w*0
+    aiRnet[[i]]$change.b <- aiRnet[[i]]$change.b*0
+  }
+  return(aiRnet)
+}
+
+aiRrun2 <- function(data, aiRnet, classif, cycles, batch.size){
+  #subdivide into batches
+  batches <- aiRbatch(data = data, batch.size = batch.size)
+  nb <- length(batches)
+  #browser()
+  tot.cost <- numeric(cycles)
+  aiRbest <- aiRnet
+  min.cost <- batch.size*ncol(data)
+  for(i in 1:cycles){
+    if(i%%nb==0){
+      b <- batches[[nb]]
+      batches <- aiRbatch(data = data, batch.size = batch.size)
+    } else {
+      b <- batches[[i%%nb]]
+    }
+    #find activation
+    aiRactiv <- activation(data = data[b,], aiRnet = aiRnet)
+    n <- length(aiRactiv)
+    # find cost
+    aiRloss <- aiRloss2(data = aiRactiv[[n]], class.levels = levels(classif), classify = classif[b])
+    tot.cost[i] <- aiRloss$total.cost
+    if(tot.cost[i]==min(tot.cost[i],min.cost)){
+      aiRbest <- aiRnet
+    }
+    newaiR <-  backprop(aiRnet = aiRnet, aiRloss2 = aiRloss, aiRactivation = aiRactiv)
+    aiRnet <- aiRfresh2(aiRnet = newaiR)
+  }
+  d <- data.frame(cycles = 1:cycles, cost = tot.cost)
+  #ggplot(data = NULL, aes(x = 1:cycles, y = tot.cost)) + geom_point()
+  ret <- list(aiRnet,aiRbest, aiRloss, d)
+  names(ret) <- c("aiRnet","aiRbest","aiRloss","Cost")
+  return(ret)
 }
 
 #' @name aiRactivation
