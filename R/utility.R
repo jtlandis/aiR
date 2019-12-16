@@ -153,3 +153,7 @@ aiRclassify <- function(data, factor, aiRnet, warning = TRUE) {
   names(ret) <- c("classify","node.max", "failed.instances")
   return(ret)
 }
+
+
+
+

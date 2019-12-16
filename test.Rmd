@@ -63,9 +63,13 @@ obj <- aiR(data = train,
            input.col = c("x","y"),
                    var.classify = "group",
                    aiRnet = mylayers,
-                   cycles = 600,
+                   cycles = 200,
                    batch.size = 30,  test.rate = 5)
 
+```
+
+```{r}
+plot(obj$aiRnet, layers = NULL)
 ```
 
 
@@ -92,38 +96,15 @@ aiRrate(data = train, factor = "group", aiRnet = obj$aiRnet)
 #   x <- scales::rescale(x, to = c(0.000000001, 0.9999999999))
 #   log(x/(1-x))
 # }
-visual <- function(aiRactivation, x, y, layer, nodes = NULL){
-  #browser()
-  data <- aiRactivation[["data"]]
-  layer.str <- layer
-  layer <- aiRactivation[[layer]]
-  n <- ncol(layer)
-  # if(invert){
-  #   layer <- inverseSigmoid(layer)
-  # }
-  if(is.null(nodes)){
-    nodes <- 1:n
-  } else if(!(is.numeric(nodes)&&all(nodes%%1==0))){
-    stop("nodes must be a non zero integer vector or NULL")
-  }
-  if(any(nodes<0)||any(nodes>n)){
-    stop(paste0(layer.str, "has a maximum of ", n, "nodes. Please assign numbers between [1,",n,"] to the \"nodes\" argument"))
-  }
-  ggdat <- cbind(data[,c(x,y)],layer[,nodes])
-  ggdat <- gather(ggdat, key = "node", value = "activation", -x, -y)
-  gg <- ggplot(ggdat, aes_string(x = x, y = y)) +
-    geom_point(aes(color = activation)) +
-    scale_color_gradientn(colors = c("orange", "white","blue"), limits = c(0,1)) +
-    facet_wrap(~node)
-  return(gg)
-}
+
 ```
 
 
 ```{r}
-visual(aiRactivation = new, x = "x", y = "y", layer = "layer1")
-visual(aiRactivation = new, x = "x", y = "y", layer = "layer2")
-visual(aiRactivation = new, x = "x", y = "y", layer = "layer3")
+
+plot(aiRactivation = new, x.val = "x", y.val = "y", layer = "layer1")
+plot(new, x.val = "x", y.val = "y", layer = "layer2")
+plot(aiRactivation = new, x.val = "x", y.val = "y", layer = "layer3")
 ```
 
 

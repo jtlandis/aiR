@@ -286,7 +286,7 @@ backprop <- function(aiRnet, aiRcost, aiRactivation) {
  # cost.vec <- cost.vec*scales::rescale(abs(cost.vec), c(1,2))
   deltaW <- t(aiRactivation[[n-1]])%*%gencost #/n.obs
   deltaA <- gencost%*%t(aiRnet[[n-1]]$weights)
-  deltaB <- apply(gencost,2, sum)
+  deltaB <- unname(apply(gencost,2, sum))
   # start.adjust <- aiRactivation[[n-1]]*cost.vec
   aiRnet[[n-1]]$change.w <- deltaW
   aiRnet[[n-1]]$change.b <- deltaB
