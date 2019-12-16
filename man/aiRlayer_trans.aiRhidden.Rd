@@ -4,7 +4,7 @@
 \alias{aiRlayer_trans.aiRhidden}
 \title{aiRlayer_trans.aiRhidden}
 \usage{
-\method{aiRlayer_trans}{aiRhidden}(data, aiRlayer)
+aiRlayer_trans.aiRhidden(data, aiRlayer)
 }
 \arguments{
 \item{data}{data of input values}

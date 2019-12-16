@@ -25,11 +25,9 @@ aiRtransform <- function(data, aiRnet, n = NULL) {
     data <- as.matrix(data)%*%aiRnet[[i]]$weights
     data <- mat.opperation(x = data, y = aiRnet[[i]]$bias, opperation = "+")
     data <- sigmoid(data)
-    aiRlayer$mean.node <- apply(data,2,mean)
-    return(list(data,aiRlayer))
-  } else {
-    stop("Error: not of class \"aiRlayer\"")
   }
+  data <- apply(data,2,zero)
+  return(data)
 }
 
 #maybe need aiRlayer_trans.aiRnet? ----
