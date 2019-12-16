@@ -6,8 +6,7 @@
 \usage{
 aiR(data, input.col, var.classify, aiRnet, cycles = 100,
   sample.method = "Sample", sample.size = 0.5, batch.size = "all",
-  sample.Factor = NULL, test = FALSE, na.rm = TRUE,
-  data.return = FALSE, test.rate = "fast")
+  sample.Factor = NULL, na.rm = TRUE, test.rate = "fast")
 }
 \arguments{
 \item{data}{Data frame that contains all named columns needed}
@@ -33,11 +32,7 @@ for no batches to be made.}
 \item{sample.Factor}{Necessary when sample.method set to "Factor". Assign as vector of length 2 in the following form
 c("column.index/name","factor.level"). Can assign only column name or index but first level is chosen in this case.}
 
-\item{test}{toggle if TRUE if test set loss and error should be reported as well. Default set to FALSE}
-
 \item{na.rm}{remove NAs, default set to TRUE. Function likely to fail with NAs}
-
-\item{data.return}{logical determines if data should be returned to the user. Default set to FALSE}
 
 \item{test.rate}{"none" or "fast" or "slow" or integer specifying how often the test model is checked. Test model is
 used only when sample.size < 0.8 is set, otherwise the full model is used instead. "fast" indicates model is tested

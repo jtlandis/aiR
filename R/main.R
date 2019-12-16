@@ -17,9 +17,7 @@
 #' for no batches to be made.
 #' @param sample.Factor Necessary when sample.method set to "Factor". Assign as vector of length 2 in the following form
 #' c("column.index/name","factor.level"). Can assign only column name or index but first level is chosen in this case.
-#' @param test toggle if TRUE if test set loss and error should be reported as well. Default set to FALSE
 #' @param na.rm remove NAs, default set to TRUE. Function likely to fail with NAs
-#' @param data.return logical determines if data should be returned to the user. Default set to FALSE
 #' @param test.rate "none" or "fast" or "slow" or integer specifying how often the test model is checked. Test model is
 #' used only when sample.size < 0.8 is set, otherwise the full model is used instead. "fast" indicates model is tested
 #' at begining and end. "slow" indicates full model is tested each cycle. An integer indicates how many cycles pass
@@ -38,9 +36,7 @@ aiR <- function(data,
                 sample.size=.5,
                 batch.size="all",
                 sample.Factor = NULL,
-                test = FALSE,
                 na.rm=TRUE,
-                data.return = FALSE,
                 test.rate = "fast") {
   if(!is.aiRnet(aiRnet)){
     stop("aiRnet must be of class \"aiRnet\"")
@@ -62,9 +58,9 @@ aiR <- function(data,
   if(!is.element(test, c(TRUE,FALSE))) {
     stop("test must be either TRUE or FALSE")
   }
-  if(!is.element(data.return, c(TRUE,FALSE))) {
-    stop("data.return must be either TRUE or FALSE")
-  }
+  # if(!is.element(data.return, c(TRUE,FALSE))) {
+  #   stop("data.return must be either TRUE or FALSE")
+  # }
   if(!is.factor(classify.vec)) {
     stop("var.classify must be assigned a factor vector as a classification variable.")
   } else {
@@ -284,9 +280,9 @@ backprop <- function(aiRnet, aiRcost, aiRactivation) {
   n.obs <- nrow(aiRactivation[[n]])
   gencost <- aiRcost$dcost*dsigmoid(aiRactivation[[n]])
  # cost.vec <- cost.vec*scales::rescale(abs(cost.vec), c(1,2))
-  deltaW <- t(aiRactivation[[n-1]])%*%gencost #/n.obs
+  deltaW <- t(aiRactivation[[n-1]])%*%gencost/n.obs
   deltaA <- gencost%*%t(aiRnet[[n-1]]$weights)
-  deltaB <- unname(apply(gencost,2, sum))
+  deltaB <- unname(apply(gencost,2, mean))
   # start.adjust <- aiRactivation[[n-1]]*cost.vec
   aiRnet[[n-1]]$change.w <- deltaW
   aiRnet[[n-1]]$change.b <- deltaB
@@ -294,9 +290,9 @@ backprop <- function(aiRnet, aiRcost, aiRactivation) {
     for(i in (n-1):2){
       gencost <- deltaA*dsigmoid(aiRactivation[[i]])
       # start.adjust <- aiRactivation[[i-1]]*cost.vec
-      deltaW <- t(aiRactivation[[i-1]])%*%gencost #/n.obs
+      deltaW <- t(aiRactivation[[i-1]])%*%gencost/n.obs
       deltaA <- gencost%*%t(aiRnet[[i-1]]$weights)
-      deltaB <- apply(gencost,2, sum)
+      deltaB <- apply(gencost,2, mean)
       aiRnet[[i-1]]$change.w <- deltaW #ideally we wouldnt do the apply
       aiRnet[[i-1]]$change.b <- deltaB
     }
