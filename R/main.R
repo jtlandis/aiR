@@ -180,7 +180,7 @@ aiRrun <- function(data_train,
     }
     newaiR <-  backprop(aiRnet = aiRnet, aiRcost = aiRcost, aiRactivation = aiRactiv)
     aiRnet <- aiRfresh(aiRnet = newaiR)
-    svMisc::progress(i)
+    svMisc::progress(i, max.value = cycles, progress.bar = T)
   }
   d <- data.frame(cycles = 1:cycles, tot.cost = tot.cost, mean.cost = mean.cost, test.cost = test.cost)
   #ggplot(data = NULL, aes(x = 1:cycles, y = tot.cost)) + geom_point()
