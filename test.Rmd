@@ -23,7 +23,7 @@ library(dplyr)
 library(justinmisc)
 library(reshape2)
 library(aiR)
-library(foreach)
+#library(foreach)
 # library(gapminder)
 # library(gganimate)
 # library(animation)
@@ -33,14 +33,14 @@ library(foreach)
 #Training data 1
 
 set.seed(6227)
-group1.x <- runif(n = 4200)
-group1.y <- runif(n = 4200)
-group2.x <- runif(n = 4200, min = -1, max = .5)
-group2.y <- runif(n = 4200, min = -1, max = .1)
+group1.x <- runif(n = 420)
+group1.y <- runif(n = 420)
+group2.x <- runif(n = 420, min = -1, max = .5)
+group2.y <- runif(n = 420, min = -1, max = .1)
 
-g1 <- cbind(group1.x,group1.y, rep("g1",4200))
+g1 <- cbind(group1.x,group1.y, rep("g1",420))
 colnames(g1) <- c("x","y","group")
-g2 <- cbind(group2.x,group2.y, rep("g2",4200))
+g2 <- cbind(group2.x,group2.y, rep("g2",420))
 colnames(g2) <- c("x","y","group")
 
 train <- as.data.frame(rbind(g1,g2))
@@ -59,14 +59,12 @@ mylayers <- aiRnet(c(2,4,4,2))
 # layer1 <- aiRlayer(2,4)
 # layer2 <- aiRlayer(4,2)
 # mylayers <- list(layer1, layer2)
-```
 
-
-```{r}
 # train <- rbind(train, data.frame(x = c(.7, .9, .6, -.7,-.9,-.6),
 #                         y = c(-.7,-.6,-.9, .5, .3, .8),
 #                         group = c("g2","g2","g2","g1","g1","g1"),
 #                         z = c(.1,.2,.4,.5,.7,-.8)))
+
 set.seed(778)
 obj <- aiR(data = train,
            input.col = c("x","y"),
@@ -97,18 +95,28 @@ aiRrate(data = train, factor = "group", aiRnet = obj$aiRnet)
 ```
 
 ```{r}
-inverseSigmoid <- function(x){
-  x <- scales::rescale(x, to = c(0.000000001, 0.9999999999))
-  log(x/(1-x))
-}
-visual <- function(aiRactivation, x, y, layer, invert = F){
+# inverseSigmoid <- function(x){
+#   x <- scales::rescale(x, to = c(0.000000001, 0.9999999999))
+#   log(x/(1-x))
+# }
+visual <- function(aiRactivation, x, y, layer, nodes = NULL){
   #browser()
   data <- aiRactivation[["data"]]
+  layer.str <- layer
   layer <- aiRactivation[[layer]]
-  if(invert){
-    layer <- inverseSigmoid(layer)
+  n <- ncol(layer)
+  # if(invert){
+  #   layer <- inverseSigmoid(layer)
+  # }
+  if(is.null(nodes)){
+    nodes <- 1:ncol
+  } else if(!(is.numeric(nodes)&&all(nodes%%1==0))){
+    stop("nodes must be a non zero integer vector or NULL")
   }
-  ggdat <- cbind(data,layer)
+  if(any(nodes<0)||any(nodes>n)){
+    stop(paste0(layer.str, "has a maximum of ", n, "nodes. Please assign numbers between [1,",n,"] to the \"nodes\" argument"))
+  }
+  ggdat <- cbind(data[,c(x,y)],layer[,nodes])
   ggdat <- gather(ggdat, key = "node", value = "activation", -x, -y)
   gg <- ggplot(ggdat, aes_string(x = x, y = y)) +
     geom_point(aes(color = activation)) +
@@ -120,84 +128,5 @@ visual <- function(aiRactivation, x, y, layer, invert = F){
 
 
 
-```{r}
-visual1 <- cbind(new$data, new$layer1)
-visual1 <- gather(visual1, key = "layer",value = "activation", -x, -y)
-ggplot(visual1, aes(x = x, y = y)) +
-  geom_point(aes(color = activation)) +
-  scale_color_gradient2(low = "orange", mid = "white", high = "blue") +
-  facet_wrap(~layer)
-visual2 <- cbind(new$data, new$layer2)
-visual2 <- gather(visual2, key = "layer",value = "activation", -x, -y)
-ggplot(visual2, aes(x = x, y = y)) +
-  geom_point(aes(color = activation)) +
-  scale_color_gradient2(low = "orange", mid = "white", high = "blue") +
-  facet_wrap(~layer)
-visual3 <- cbind(new$data, new$layer3)
-visual3 <- gather(visual3, key = "layer",value = "activation", -x, -y)
-ggplot(visual3, aes(x = x, y = y)) +
-  geom_point(aes(color = activation)) +
-  scale_color_gradient2(low = "orange", mid = "white", high = "blue") +
-  facet_wrap(~layer)
 
-
-```
-```{r}
-ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = new$layer2[,1])) +
-  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
-ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = new$layer2[,2])) +
-  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
-```
-
-
-
-
-```{r}
-ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = as.factor(classify_obj$classify), alpha = classify_obj$node.max)) 
-```
-
-```{r}
-aiRrate(data = train, factor = "group", aiRnet = loss.aiR$aiRnet)
-```
-
-
-```{r}
-space.var <- aiRdevelop(data = train, var.classify = "group", aiRnet = mylayers, sample.size = 1, batch.size = 60, steps = 22)
-  gg <- ggplot(data = space.var, aes(x = x, y = y, color = classify, alpha = node.max)) +
-    geom_point() +
-    facet_wrap(~step)
-  gg
-
-```
-
-```{r}
-train_additional <- data.frame(x = c(runif(n = 600,min = -1,0),runif(n = 600, min = 0, 1)), y = c(runif(n = 600,min = 0,1),runif(n = 600, min = -1, 0)), group = as.factor(rep(c("g3","g4"), each = 600)))
-```
-
-```{r}
-#build > load all
-newaiR <- aiRnet(c(2,100,100,6,4))
-aiRnet1 <- newaiR
-aiRnet2 <- newaiR
-try.test <- rbind(train, train_additional)
-
-system.time(fast <- aiRrun(data = try.test, var.classify = "group",aiRnet = aiRnet1,cycles = 150,sample.size = 1,batch.size = 100,method.propigate = "fast"))
-system.time(slow <- aiRrun(data = try.test, var.classify = "group",aiRnet = aiRnet2,cycles = 50,sample.size = 1,batch.size = 100,method.propigate = "slow"))
-```
-
-```{r}
-iteration <- as.numeric(rownames(fast$loss))
-ggplot(data = fast$loss,aes(x = iteration)) +
-  geom_point(aes(y = train,color = "train")) +
-  geom_point(aes(y = train.error, color = "train.error")) +
-  #geom_point(aes(y = test, color = "test")) +
-  labs(list(y = "loss"))+
-  coord_cartesian(ylim = c(min(loss.aiR$loss[!loss.aiR$loss==0]),max(loss.aiR$loss)))+
-  theme(axis.text.x = element_text(angle = 90)) +
-  scale_y_log10()
-aiRrate(data = try.test, factor = "group", aiRnet = fast$aiRnet)
-```
 

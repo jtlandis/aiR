@@ -4,12 +4,12 @@
 \alias{aiRbatch}
 \title{aiRbatch}
 \usage{
-aiRbatch(data, batch.size)
+aiRbatch(n, batch.size)
 }
 \arguments{
-\item{data}{data of input values}
-
 \item{batch.size}{how many observations are used per batch}
+
+\item{data}{data of input values}
 }
 \value{
 a list of data.frames containing random samples of input data.

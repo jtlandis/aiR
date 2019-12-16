@@ -1,8 +1,5 @@
 
-
 #' @import stringr
-
-
 
 
 
@@ -28,10 +25,44 @@ aiRtransform <- function(data, aiRnet, n = NULL) {
     data <- as.matrix(data)%*%aiRnet[[i]]$weights
     data <- mat.opperation(x = data, y = aiRnet[[i]]$bias, opperation = "+")
     data <- sigmoid(data)
+    aiRlayer$mean.node <- apply(data,2,mean)
+    return(list(data,aiRlayer))
+  } else {
+    stop("Error: not of class \"aiRlayer\"")
   }
-  data <- apply(data,2,zero)
-  return(data)
 }
+
+#maybe need aiRlayer_trans.aiRnet? ----
+
+#' @name aiRlayer_trans.aiRhidden
+#'
+#' @description aiRlayer_trans method for aiRhidden objects
+#'
+#' @title aiRlayer_trans.aiRhidden
+#'
+#' @param data data of input values
+#' @param aiRlayer takes either an aiRlayer, aiRnet, or aiRhidden object
+#'
+#' @return returns aiRnet output of data
+#'
+#' @export
+aiRlayer_trans.aiRhidden <- function(data, aiRlayer) {
+  n <- length(aiRlayer)
+  a <- lapply(aiRlayer,aiRtransform,data = data)
+  a.data <- lapply(a,getlayer,layer=1)
+  a.layers <- lapply(a,getlayer,layer=2)
+  paste.v <- vector("character",length(a.data))
+  for(i in 1:length(a.data)) {
+    paste.v[i] <- paste("n",i," = a.data[[",i,"]]",sep = "")
+    aiRlayer[[i]] <- a.layers[[i]]
+  }
+  browser()
+  paste.v <- str_flatten(string = paste.v, collapse = ", ")
+
+  hidden_return <- eval(parse(text = paste("data.frame(",paste.v,")",sep = "")))
+  return(list(hidden_return,aiRlayer))
+}
+
 
 #' @name merge_multi
 #'
