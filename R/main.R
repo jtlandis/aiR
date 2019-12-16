@@ -65,9 +65,6 @@ aiR <- function(data,
   if(!is.element(data.return, c(TRUE,FALSE))) {
     stop("data.return must be either TRUE or FALSE")
   }
-  if(!is.element(test.rate, c("fast","slow"))) {
-    stop("test.rate must be either \"fast\" or \"slow\"")
-  }
   if(!is.factor(classify.vec)) {
     stop("var.classify must be assigned a factor vector as a classification variable.")
   } else {
@@ -89,7 +86,7 @@ aiR <- function(data,
     } else if(test.rate=="slow"){
       modularTest <- 1
     }
-  } else if(is.integer(test.rate)){
+  } else if(is.numeric(test.rate)&&test.rate%%1==0){
     modularTest <- test.rate
   } else {
     stop("test.rate must be a non-zero integer or \"none\", or \"fast\", \"slow\".")
@@ -163,7 +160,7 @@ aiRrun <- function(data_train,
   min.cost <- batch.size*ncol(data_train)
   for(i in 1:cycles){
 
-    if(modularTest<=cycles||i%%modularTest==0){
+    if(i==1||i%%modularTest==0){
       testActiv <- aiRactivation(data = data_test, aiRnet = aiRnet)
       testCost <- aiRcost(data = testActiv[[n]], class.levels = class.levels, classify = classify_test.vec)
       test.cost[i] <- testCost$mean.cost
@@ -171,7 +168,7 @@ aiRrun <- function(data_train,
 
     if(i%%nb==0){
       b <- batches[[nb]]
-      batches <- aiRbatch(data = data, batch.size = batch.size)
+      batches <- aiRbatch(data = data_train, batch.size = batch.size)
     } else {
       b <- batches[[i%%nb]]
     }
@@ -190,8 +187,9 @@ aiRrun <- function(data_train,
   }
   d <- data.frame(cycles = 1:cycles, tot.cost = tot.cost, mean.cost = mean.cost, test.cost = test.cost)
   #ggplot(data = NULL, aes(x = 1:cycles, y = tot.cost)) + geom_point()
-  ret <- list(aiRnet,aiRbest, aiRcost, d)
+  ret <- list(aiRnet,aiRbest, d)
   names(ret) <- c("aiRnet","aiRbest","Cost")
+  class(ret) <- "aiR"
   return(ret)
 }
 
@@ -227,6 +225,7 @@ aiRactivation <- function(aiRnet, data) {
     l[[i]] <- data
   }
   l[[n+1]] <- apply(l[[n+1]],2,zero)
+  names(l) <- c("data",paste0("layer",1:n))
   class(l) <- "aiRactivation"
   return(l)
 

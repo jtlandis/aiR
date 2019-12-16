@@ -67,77 +67,80 @@ mylayers <- aiRnet(c(2,4,4,2))
 #                         y = c(-.7,-.6,-.9, .5, .3, .8),
 #                         group = c("g2","g2","g2","g1","g1","g1"),
 #                         z = c(.1,.2,.4,.5,.7,-.8)))
-train <- train[,-4]
-loss.aiR <- aiRrun(data = train,var.classify = "group",aiRnet = mylayers, sample.size = 1,cycles = 300,batch.size = 30)
+set.seed(778)
+obj <- aiR(data = train,
+           input.col = c("x","y"),
+                   var.classify = "group",
+                   aiRnet = mylayers,
+                   cycles = 600,
+                   batch.size = 30,  test.rate = 5)
 
 ```
 
+
 ```{r}
-set.seed(6778)
-system.time(loss.aiR <- aiRrun(data = train,var.classify = "group",aiRnet = mylayers, sample.size = .5,cycles = 300,batch.size = 60))
-set.seed(6778)
-system.time(loss.aiR <- aiRrun(data = train,var.classify = "group",aiRnet = mylayers, sample.size = .5,cycles = 300,batch.size = 60, test = TRUE))
+dat <- na.exclude(gather(obj$Cost, key = "cost.type", value = "cost.value", -cycles))
+ggplot(data = dat, aes(x = cycles, y = cost.value, color = cost.type)) +geom_point() + scale_y_log10()
 ```
 
 
-
-
-
 ```{r}
-iteration <- as.numeric(rownames(loss.aiR$loss))
-ggplot(data = loss.aiR$loss,aes(x = iteration)) +
-  geom_point(aes(y = train,color = "train")) +
-  geom_point(aes(y = train.error, color = "train.error")) +
-  #geom_point(aes(y = test, color = "test")) +
-  labs(list(y = "loss"))+
-  coord_cartesian(ylim = c(min(loss.aiR$loss[!loss.aiR$loss==0]),max(loss.aiR$loss)))+
-  theme(axis.text.x = element_text(angle = 90)) +
-  scale_y_log10()
-```
+new <- aiRactivation(data = train[,c("x","y")], aiRnet = obj$aiRnet)
+classify_obj <- aiRclassify(data = train[,c("x","y")], factor = levels(train$group), aiRnet = obj$aiRnet)
 
-
-
-```{r}
-# v <- function(data,
-#               factor,
-#               aiRnet,
-#               range.size = 10000) {
-#   index <- index.o.coln(vec = factor, v.size = 1, v.name = "factor", name.col = colnames(data))
-#   new <- aiRactivation(data = data[,-index], aiRnet = aiRnet, range.size = range.size)
-#   classify_obj <- aiRclassify(data = new$data_model, factor = index, aiRnet = aiRnet)
-#   gg <- ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-#   geom_point(aes(color = as.factor(classify_obj$classify), alpha = classify_obj$node.max))
-#   return(gg)
-#               }
-```
-
-```{r}
-new <- aiRactivation(data = train[,-3], aiRnet = loss.aiR$aiRnet, range.size = 10000)
-classify_obj <- aiRclassify(data = new$data_model, factor = levels(train$group), aiRnet = loss.aiR$aiRnet)
-```
-
-```{r}
-ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
+ggplot(train, aes(x = x, y = y)) +
   geom_point(aes(color = as.factor(classify_obj$classify), alpha = classify_obj$node.max)) 
 ```
 
 ```{r}
-aiRrate(data = train, factor = "group", aiRnet = loss.aiR$aiRnet)
+aiRrate(data = train, factor = "group", aiRnet = obj$aiRnet)
 ```
 
 ```{r}
-ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = new$layer1[,1])) +
-  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
-ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = new$layer1[,2])) +
-  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
-ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = new$layer1[,3])) +
-  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
-ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
-  geom_point(aes(color = new$layer1[,4])) +
-  scale_color_gradient2(low = "orange", mid = "white", high = "blue")
+inverseSigmoid <- function(x){
+  x <- scales::rescale(x, to = c(0.000000001, 0.9999999999))
+  log(x/(1-x))
+}
+visual <- function(aiRactivation, x, y, layer, invert = F){
+  #browser()
+  data <- aiRactivation[["data"]]
+  layer <- aiRactivation[[layer]]
+  if(invert){
+    layer <- inverseSigmoid(layer)
+  }
+  ggdat <- cbind(data,layer)
+  ggdat <- gather(ggdat, key = "node", value = "activation", -x, -y)
+  gg <- ggplot(ggdat, aes_string(x = x, y = y)) +
+    geom_point(aes(color = activation)) +
+    scale_color_gradient2(low = "orange", mid = "white", high = "blue") +
+    facet_wrap(~node)
+  return(gg)
+}
+```
+
+
+
+```{r}
+visual1 <- cbind(new$data, new$layer1)
+visual1 <- gather(visual1, key = "layer",value = "activation", -x, -y)
+ggplot(visual1, aes(x = x, y = y)) +
+  geom_point(aes(color = activation)) +
+  scale_color_gradient2(low = "orange", mid = "white", high = "blue") +
+  facet_wrap(~layer)
+visual2 <- cbind(new$data, new$layer2)
+visual2 <- gather(visual2, key = "layer",value = "activation", -x, -y)
+ggplot(visual2, aes(x = x, y = y)) +
+  geom_point(aes(color = activation)) +
+  scale_color_gradient2(low = "orange", mid = "white", high = "blue") +
+  facet_wrap(~layer)
+visual3 <- cbind(new$data, new$layer3)
+visual3 <- gather(visual3, key = "layer",value = "activation", -x, -y)
+ggplot(visual3, aes(x = x, y = y)) +
+  geom_point(aes(color = activation)) +
+  scale_color_gradient2(low = "orange", mid = "white", high = "blue") +
+  facet_wrap(~layer)
+
+
 ```
 ```{r}
 ggplot(as.data.frame(new$data_model), aes(x = x, y = y)) +
@@ -181,6 +184,20 @@ aiRnet1 <- newaiR
 aiRnet2 <- newaiR
 try.test <- rbind(train, train_additional)
 
-system.time(fast <- aiRrun(data = try.test, var.classify = "group",aiRnet = aiRnet1,cycles = 50,sample.size = 1,batch.size = 100,method.propigate = "fast"))
+system.time(fast <- aiRrun(data = try.test, var.classify = "group",aiRnet = aiRnet1,cycles = 150,sample.size = 1,batch.size = 100,method.propigate = "fast"))
 system.time(slow <- aiRrun(data = try.test, var.classify = "group",aiRnet = aiRnet2,cycles = 50,sample.size = 1,batch.size = 100,method.propigate = "slow"))
 ```
+
+```{r}
+iteration <- as.numeric(rownames(fast$loss))
+ggplot(data = fast$loss,aes(x = iteration)) +
+  geom_point(aes(y = train,color = "train")) +
+  geom_point(aes(y = train.error, color = "train.error")) +
+  #geom_point(aes(y = test, color = "test")) +
+  labs(list(y = "loss"))+
+  coord_cartesian(ylim = c(min(loss.aiR$loss[!loss.aiR$loss==0]),max(loss.aiR$loss)))+
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_y_log10()
+aiRrate(data = try.test, factor = "group", aiRnet = fast$aiRnet)
+```
+

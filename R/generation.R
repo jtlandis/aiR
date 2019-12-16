@@ -8,6 +8,8 @@
 #' @return generates aiRlayer object of specified dimensions
 aiRlayer <- function(dim1,dim2) {
   weights <- matrix(runif(n = dim1*dim2, min = -10, max = 10), nrow = dim1, ncol = dim2)
+  colnames(weights) <- paste0("node",1:dim2)
+  rownames(weights) <- paste0("weights",1:dim1)
   change.w <- matrix(0, nrow = dim1, ncol = dim2)
   bias <- runif(n = dim2, min = -5, max = 5)
   change.b <- rep(0, dim2)
@@ -47,6 +49,7 @@ aiRnet <- function(nodes) {
   for(i in 1:n){
     aiR[[i]] <- aiRlayer(nodes[i],nodes[i+1])
   }
+  names(aiR) <- paste0("layer",1:n)
   class(aiR) <- "aiRnet"
   return(aiR)
 }
@@ -83,3 +86,16 @@ is.aiRcost <- function(x) inherits(x,"aiRcost")
 #'
 #' @export
 is.aiRactivation <- function(x) inherits(x, "aiRactivation")
+
+
+
+#' @name is.aiR
+#'
+#' @title is.aiR
+#'
+#' @param x object
+#'
+#' @return logical value
+#'
+#' @export
+is.aiRlayer <- function(x) inherits(x, "aiR")

@@ -16,3 +16,6 @@ aiRtransform(data, aiRnet, n = NULL)
 \value{
 returns aiRnet output of data
 }
+\description{
+aiRtransform
+}
