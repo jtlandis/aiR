@@ -55,9 +55,9 @@ aiR <- function(data,
   } else {
     warning("na.rm set to FALSE, NA values not sutable for matrix multiplication. Set NA to place holder value.")
   }
-  if(!is.element(test, c(TRUE,FALSE))) {
-    stop("test must be either TRUE or FALSE")
-  }
+  # if(!is.element(test, c(TRUE,FALSE))) {
+  #   stop("test must be either TRUE or FALSE")
+  # }
   # if(!is.element(data.return, c(TRUE,FALSE))) {
   #   stop("data.return must be either TRUE or FALSE")
   # }
@@ -180,6 +180,7 @@ aiRrun <- function(data_train,
     }
     newaiR <-  backprop(aiRnet = aiRnet, aiRcost = aiRcost, aiRactivation = aiRactiv)
     aiRnet <- aiRfresh(aiRnet = newaiR)
+    svMisc::progress(i)
   }
   d <- data.frame(cycles = 1:cycles, tot.cost = tot.cost, mean.cost = mean.cost, test.cost = test.cost)
   #ggplot(data = NULL, aes(x = 1:cycles, y = tot.cost)) + geom_point()

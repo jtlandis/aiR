@@ -10,7 +10,7 @@ layerfunc <- function(layer, layer.str){
   rownames(data)[nrow(data)] <- "bias"
   data$wb <- rownames(data)
   data$layer <- layer.str
-  data <- gather(data, key = "node", value = "value", -wb, -layer)
+  data <- tidyr::gather(data, key = "node", value = "value", -wb, -layer)
   return(data)
 }
 
@@ -120,7 +120,7 @@ plot.aiRactivation <- function(aiRactivation, x.val, y.val, layer, nodes = NULL)
     stop(paste0(layer.str, "has a maximum of ", n, "nodes. Please assign numbers between [1,",n,"] to the \"nodes\" argument"))
   }
   ggdat <- cbind(data[,c(x.val,y.val)],layer[,nodes])
-  ggdat <- gather(ggdat, key = "node", value = "activation", -x.val, -y.val)
+  ggdat <- tidyr::gather(ggdat, key = "node", value = "activation", -x.val, -y.val)
   gg <- ggplot(ggdat, aes_string(x = x.val, y = y.val)) +
     geom_point(aes(color = activation)) +
     scale_color_gradientn(colors = c("orange", "white","blue"), limits = c(0,1)) +
@@ -144,7 +144,7 @@ plot.aiRactivation <- function(aiRactivation, x.val, y.val, layer, nodes = NULL)
 #' @export
 plot.aiR <- function(aiR){
   dat <- aiR$Cost
-  dat <- na.exclude(gather(dat, key = "cost.type", value = "cost.value", -cycles))
+  dat <- na.exclude(tidyr::gather(dat, key = "cost.type", value = "cost.value", -cycles))
   gg <- ggplot(data = dat, aes(x = cycles, y = cost.value, color = cost.type)) +
     geom_point() +
     scale_y_log10() +
