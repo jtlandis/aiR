@@ -74,11 +74,14 @@ plot.aiRnet <- function(aiRnet, layers = NULL){
     geom_tile(color = "black") + facet_wrap(~layer, scales = "free") +
     scale_fill_gradientn(colours = c("#00079C","#1AE1D5","#FFFFFF", "#E3F925","#A10000"),
                          values = scales::rescale(c(vmin, vmin/2, 0, vmax/2, vmax))) +
+    scale_x_discrete(expand = expand_scale()) +
+    scale_y_discrete(expand = expand_scale()) +
     labs(x = "\nWeights & Biasses",y="Nodes\n") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           panel.background = element_blank(),
           panel.grid = element_blank(),
-          strip.text = element_text(face = "bold"))
+          strip.text = element_text(face = "bold"),
+          strip.background = element_rect(fill = "white", color = "black"))
   return(gg)
 }
 
@@ -121,6 +124,32 @@ plot.aiRactivation <- function(aiRactivation, x.val, y.val, layer, nodes = NULL)
   gg <- ggplot(ggdat, aes_string(x = x.val, y = y.val)) +
     geom_point(aes(color = activation)) +
     scale_color_gradientn(colors = c("orange", "white","blue"), limits = c(0,1)) +
-    facet_wrap(~node)
+    facet_wrap(~node) +
+    theme_classic() +
+    theme(strip.text = element_text(face = "bold"))
+  return(gg)
+}
+
+
+#' @name plot.aiR
+#'
+#' @title plot aiR
+#'
+#' @description plotting the cost of the aiR object over all cycles
+#'
+#' @param aiRcost aiR object
+#'
+#' @return ggplot object
+#'
+#' @export
+plot.aiR <- function(aiR){
+  dat <- aiR$Cost
+  dat <- na.exclude(gather(dat, key = "cost.type", value = "cost.value", -cycles))
+  gg <- ggplot(data = dat, aes(x = cycles, y = cost.value, color = cost.type)) +
+    geom_point() +
+    scale_y_log10() +
+    labs(x = "\nCycles", y = "Cost Value\n", color = "Cost Type") +
+    theme_classic() +
+    theme(strip.text = element_text(face = "bold"))
   return(gg)
 }

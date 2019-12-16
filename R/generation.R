@@ -98,4 +98,4 @@ is.aiRactivation <- function(x) inherits(x, "aiRactivation")
 #' @return logical value
 #'
 #' @export
-is.aiRlayer <- function(x) inherits(x, "aiR")
+is.aiR <- function(x) inherits(x, "aiR")

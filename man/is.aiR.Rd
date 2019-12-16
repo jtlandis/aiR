@@ -2,10 +2,9 @@
 % Please edit documentation in R/generation.R
 \name{is.aiR}
 \alias{is.aiR}
-\alias{is.aiRlayer}
 \title{is.aiR}
 \usage{
-is.aiRlayer(x)
+is.aiR(x)
 }
 \arguments{
 \item{x}{object}
